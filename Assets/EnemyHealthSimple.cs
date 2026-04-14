@@ -10,6 +10,8 @@ public class EnemyHealthSimple : MonoBehaviour
     void Start()
     {
         hp = maxHp;
+        if (GetComponent<EnemyStatusEffectsSimple>() == null)
+            gameObject.AddComponent<EnemyStatusEffectsSimple>();
     }
 
     public void TakeHit(int damage)
