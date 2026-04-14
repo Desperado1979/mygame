@@ -119,3 +119,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotateSpeed: 90
+  pickupWeight: 2.5
+  pickupId: potion
+  pickupCount: 2
+  randomTypeOnSpawn: 1
+  weightPotion: 40
+  weightMana: 35
+  weightShard: 25
+  owner: {fileID: 0}
+  ownerTeamId: -1
+  ownerProtectUntil: 0
+  ownerProtectSeconds: 3
+  lifetimeSeconds: 20
+  enableMagnet: 0
+  magnetRange: 3
+  magnetSpeed: 7

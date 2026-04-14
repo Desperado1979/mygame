@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PlayerState",
+  "type": "object",
+  "required": ["playerId", "level", "xp", "gold", "inventory", "skills", "version"],
+  "properties": {
+    "playerId": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "level": { "type": "integer", "minimum": 1 },
+    "xp": {
+      "type": "object",
+      "required": ["xpIntoLevel", "xpBank", "skillPoints"],
+      "properties": {
+        "xpIntoLevel": { "type": "integer", "minimum": 0 },
+        "xpBank": { "type": "integer", "minimum": 0 },
+        "skillPoints": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "gold": { "type": "integer", "minimum": 0 },
+    "inventory": {
+      "type": "object",
+      "required": ["hpPotion", "mpPotion", "weight"],
+      "properties": {
+        "hpPotion": { "type": "integer", "minimum": 0 },
+        "mpPotion": { "type": "integer", "minimum": 0 },
+        "weight": { "type": "number", "minimum": 0 }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "required": ["qTier", "rTier", "qLevel", "rLevel"],
+      "properties": {
+        "qTier": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "rTier": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "qLevel": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "rLevel": { "type": "integer", "minimum": 1, "maximum": 10 }
+      }
+    }
+  }
+}

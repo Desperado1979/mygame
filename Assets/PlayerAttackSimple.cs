@@ -16,7 +16,7 @@ public class PlayerAttackSimple : MonoBehaviour
                 EnemyHealthSimple enemy = hits[0].GetComponent<EnemyHealthSimple>();
                 if (enemy != null)
                 {
-                    enemy.TakeHit(damagePerHit);
+                    enemy.TakeHit(damagePerHit, transform.position);
                 }
                 else
                 {

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7906069619574190268}
   - component: {fileID: 6884615660272645584}
   - component: {fileID: 5778876412854326288}
+  - component: {fileID: 2946148755747556563}
   m_Layer: 6
   m_Name: Enemy-01
   m_TagString: Enemy
@@ -29,7 +30,7 @@ Transform:
   m_GameObject: {fileID: 5204939915484738632}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3, y: 1, z: 3}
+  m_LocalPosition: {x: 19, y: 1, z: 19}
   m_LocalScale: {x: 1, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -63,7 +64,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: f1e2d3c4b5a6978812345678abcdef01, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -121,5 +122,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHp: 3
+  xpOnKill: 8
+  goldOnKill: 30
   dropPrefab: {fileID: 5854477858726258427, guid: 744726bd270256d4daf3db77b0f0f3f5,
     type: 3}
+--- !u!114 &2946148755747556563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5204939915484738632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3628c577cef6adf4bbc4037e9239b6fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 2.8
+  detectRange: 9
+  stopRange: 1.1
+  leashRangeFromSpawn: 14

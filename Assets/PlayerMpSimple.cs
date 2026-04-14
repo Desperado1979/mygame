@@ -28,6 +28,14 @@ public class PlayerMpSimple : MonoBehaviour
         return true;
     }
 
+    public bool Restore(int amount)
+    {
+        if (amount <= 0 || mp >= maxMp)
+            return false;
+        mp = Mathf.Min(maxMp, mp + amount);
+        return true;
+    }
+
     public int CurrentMpRounded => Mathf.FloorToInt(mp);
     public int MaxMp => maxMp;
     public float Mp01 => maxMp <= 0 ? 0f : Mathf.Clamp01(mp / maxMp);

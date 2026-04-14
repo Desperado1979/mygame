@@ -1,0 +1,219 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>D3: 背包负重占位 — 拾取失败则不掉落物不销毁。</summary>
+public class PlayerInventorySimple : MonoBehaviour
+{
+    public float maxCarryWeight = 45f;
+    public string hpPotionId = GameItemIdsSimple.HpPotion;
+    public int hpPotionHealAmount = 45;
+    public string mpPotionId = GameItemIdsSimple.MpPotion;
+    public int mpPotionRestoreAmount = 35;
+    public int buyPotionGoldCost = 20;
+    public int buyManaGoldCost = 24;
+    public int buyPotionCount = 1;
+    public float buyPotionWeight = 1f;
+    public int sellPotionGold = 8;
+    public int sellManaGold = 10;
+    float currentWeight;
+    int stackCount;
+    PlayerHotkeysSimple hotkeys;
+    readonly Dictionary<string, int> itemCounts = new Dictionary<string, int>();
+
+    public float CurrentWeight => currentWeight;
+    public int StackCount => stackCount;
+    public int GetCount(string itemId) => itemCounts.TryGetValue(itemId, out int c) ? c : 0;
+    public int HpPotionCount => GetCount(hpPotionId);
+    public int MpPotionCount => GetCount(mpPotionId);
+
+    void Update()
+    {
+        if (hotkeys == null)
+            hotkeys = GetComponent<PlayerHotkeysSimple>();
+
+        KeyCode hpKey = hotkeys != null ? hotkeys.useHpPotion : KeyCode.Alpha1;
+        KeyCode mpKey = hotkeys != null ? hotkeys.useMpPotion : KeyCode.Alpha2;
+        KeyCode buyHpKey = hotkeys != null ? hotkeys.buyHpPotion : KeyCode.B;
+        KeyCode buyMpKey = hotkeys != null ? hotkeys.buyMpPotion : KeyCode.N;
+        KeyCode sellKey = hotkeys != null ? hotkeys.sellPotion : KeyCode.V;
+
+        if (Input.GetKeyDown(hpKey))
+            TryUseHpPotion();
+        if (Input.GetKeyDown(mpKey))
+            TryUseMpPotion();
+        if (Input.GetKeyDown(buyHpKey))
+            TryBuyHpPotion();
+        if (Input.GetKeyDown(buyMpKey))
+            TryBuyMpPotion();
+        if (Input.GetKeyDown(sellKey))
+            TrySellOnePotion();
+    }
+
+    public bool TryAddPickup(float weight, string itemId = "loot", int count = 1)
+    {
+        if (count <= 0) count = 1;
+        if (weight <= 0f)
+            weight = 1f;
+
+        float totalWeight = weight * count;
+        if (currentWeight + totalWeight > maxCarryWeight + 0.0001f)
+            return false;
+
+        currentWeight += totalWeight;
+        stackCount += count;
+
+        itemId = GameItemIdsSimple.Normalize(itemId);
+        if (!itemCounts.ContainsKey(itemId))
+            itemCounts[itemId] = 0;
+        itemCounts[itemId] += count;
+
+        Debug.Log($"Pickup +{count} {itemId} (W+{totalWeight:F1})  W:{currentWeight:F0}/{maxCarryWeight}");
+        ServerAuditLogSimple.Push("inv_add", $"{itemId},count={count},w={totalWeight:F1}");
+        return true;
+    }
+
+    public bool TryUseHpPotion()
+    {
+        int count = HpPotionCount;
+        if (count <= 0)
+            return false;
+
+        PlayerHealthSimple hp = GetComponent<PlayerHealthSimple>();
+        if (hp == null || !hp.Heal(hpPotionHealAmount, hpPotionId))
+            return false;
+
+        itemCounts[hpPotionId] = count - 1;
+        stackCount = Mathf.Max(0, stackCount - 1);
+        currentWeight = Mathf.Max(0f, currentWeight - 1f);
+        ServerAuditLogSimple.Push("inv_use_hp", $"count=1,remain={itemCounts[hpPotionId]}");
+        return true;
+    }
+
+    public bool TryUseMpPotion()
+    {
+        int count = MpPotionCount;
+        if (count <= 0)
+            return false;
+
+        PlayerMpSimple mp = GetComponent<PlayerMpSimple>();
+        if (mp == null || !mp.Restore(mpPotionRestoreAmount))
+            return false;
+
+        itemCounts[mpPotionId] = count - 1;
+        stackCount = Mathf.Max(0, stackCount - 1);
+        currentWeight = Mathf.Max(0f, currentWeight - 1f);
+        ServerAuditLogSimple.Push("inv_use_mp", $"count=1,remain={itemCounts[mpPotionId]}");
+        return true;
+    }
+
+    public bool TryBuyHpPotion()
+    {
+        PlayerWalletSimple wallet = GetComponent<PlayerWalletSimple>();
+        if (wallet == null)
+            return false;
+
+        int count = Mathf.Max(1, buyPotionCount);
+        float totalWeight = Mathf.Max(0.1f, buyPotionWeight) * count;
+        int cost = Mathf.Max(1, buyPotionGoldCost) * count;
+
+        if (currentWeight + totalWeight > maxCarryWeight + 0.0001f)
+            return false;
+        if (!wallet.TrySpend(cost))
+            return false;
+
+        return TryAddPickup(Mathf.Max(0.1f, buyPotionWeight), hpPotionId, count);
+    }
+
+    public bool TryBuyMpPotion()
+    {
+        PlayerWalletSimple wallet = GetComponent<PlayerWalletSimple>();
+        if (wallet == null)
+            return false;
+
+        int count = Mathf.Max(1, buyPotionCount);
+        float totalWeight = Mathf.Max(0.1f, buyPotionWeight) * count;
+        int cost = Mathf.Max(1, buyManaGoldCost) * count;
+
+        if (currentWeight + totalWeight > maxCarryWeight + 0.0001f)
+            return false;
+        if (!wallet.TrySpend(cost))
+            return false;
+
+        return TryAddPickup(Mathf.Max(0.1f, buyPotionWeight), mpPotionId, count);
+    }
+
+    public bool TrySellOnePotion()
+    {
+        PlayerWalletSimple wallet = GetComponent<PlayerWalletSimple>();
+        if (wallet == null)
+            return false;
+
+        if (HpPotionCount > 0)
+        {
+            itemCounts[hpPotionId] = HpPotionCount - 1;
+            stackCount = Mathf.Max(0, stackCount - 1);
+            currentWeight = Mathf.Max(0f, currentWeight - 1f);
+            wallet.AddGold(Mathf.Max(1, sellPotionGold));
+            ServerAuditLogSimple.Push("inv_sell_hp", "count=1");
+            return true;
+        }
+
+        if (MpPotionCount > 0)
+        {
+            itemCounts[mpPotionId] = MpPotionCount - 1;
+            stackCount = Mathf.Max(0, stackCount - 1);
+            currentWeight = Mathf.Max(0f, currentWeight - 1f);
+            wallet.AddGold(Mathf.Max(1, sellManaGold));
+            ServerAuditLogSimple.Push("inv_sell_mp", "count=1");
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool RemoveItemById(string itemId, int count, float unitWeight = 1f)
+    {
+        itemId = GameItemIdsSimple.Normalize(itemId);
+        if (string.IsNullOrEmpty(itemId) || count <= 0)
+            return false;
+        int has = GetCount(itemId);
+        if (has < count)
+            return false;
+
+        itemCounts[itemId] = has - count;
+        stackCount = Mathf.Max(0, stackCount - count);
+        currentWeight = Mathf.Max(0f, currentWeight - Mathf.Max(0.1f, unitWeight) * count);
+        ServerAuditLogSimple.Push("inv_remove", $"{itemId},count={count}");
+        return true;
+    }
+
+    public void SetItemCount(string itemId, int count, float unitWeight = 1f)
+    {
+        itemId = GameItemIdsSimple.Normalize(itemId);
+
+        int clamped = Mathf.Max(0, count);
+        itemCounts[itemId] = clamped;
+        RebuildWeightAndStacks(unitWeight);
+        ServerAuditLogSimple.Push("inv_set", $"{itemId},{clamped}");
+    }
+
+    void OnValidate()
+    {
+        hpPotionId = GameItemIdsSimple.Normalize(hpPotionId);
+        mpPotionId = GameItemIdsSimple.Normalize(mpPotionId);
+        if (maxCarryWeight < 1f) maxCarryWeight = 1f;
+        if (buyPotionWeight <= 0f) buyPotionWeight = 1f;
+        if (buyPotionCount < 1) buyPotionCount = 1;
+    }
+
+    void RebuildWeightAndStacks(float fallbackUnitWeight)
+    {
+        int totalCount = 0;
+        foreach (KeyValuePair<string, int> kv in itemCounts)
+            totalCount += Mathf.Max(0, kv.Value);
+
+        stackCount = totalCount;
+        currentWeight = Mathf.Max(0f, totalCount * Mathf.Max(0.1f, fallbackUnitWeight));
+        currentWeight = Mathf.Min(currentWeight, maxCarryWeight);
+    }
+}
