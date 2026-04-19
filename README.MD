@@ -16,6 +16,7 @@
 
 | 日期 | 阶段 | 目标 | 状态 | 结果/备注 |
 |------|------|------|------|-----------|
+| 2026-04-21 | **D17 续十七** | **Unity**：**`PlayerStateExportSimple`** **`POST /sync`** 带 **`If-Match`**（**`PlayerPrefs`** 存 **`ETag`**）；HUD **`syn:precond`**（412）；**`syncUseIfMatch`** 开关 | **已完成** | 见 **「本次续写 · D17 续十七」**；**`GET /state` 预取 ETag** 仍 **【未】** |
 | 2026-04-21 | **D16 续十六** | **`ETag`** / **`If-Match`**：**`GET /state`**、**`POST /sync`**、**`POST /rehearsal/apply-patch`** 乐观并发；**`GET /rehearsal/etag-concurrency`**；**`SYNC_ETAG_DISABLED`** | **已完成** | 见 **「本次续写 · D16 续十六」**；**Redis** 仍 **【未】** |
 | 2026-04-21 | **D15 续十五** | **`REHEARSAL_PATCH_WRITE=1`**：**`POST /rehearsal/apply-patch`** 写 **`state`**；**`GET /rehearsal/apply-patch`** 说明；与 **`POST /sync`** 同校验链 | **已完成** | 见 **「本次续写 · D15 续十五」**；**生产 PATCH** 仍非目标 |
 | 2026-04-21 | **D14 续十四** | **`SYNC_AUDIT_STATE_STRICT`**：**audit 重放尾** vs **`state`** 不一致时 **400**；**`GET /rehearsal/audit-state-strict`**；**`audit_validate.cjs`** | **已完成** | 见 **「本次续写 · D14 续十四」**；**深度交叉** 收口一档 |
@@ -605,7 +606,21 @@
 7. **`GET /rehearsal/etag-concurrency`**：机器可读说明；**`GET /health`**：**`syncEtagIfMatchEnabled`**、**`rehearsalEtagConcurrencyPath`**。
 8. **`GET /rehearsal/compliance-bundle`**：**`relatedPaths.etagConcurrency`**；**`GET /rehearsal/patch-strategy`** 规则已更新 **D16**。
 9. **`.env.example`**：已列 **D16**。
-10. **下一批**：**Redis**、**Unity 客户端 If-Match** 等仍 **【未】**。
+10. **下一批**：**Redis**、**`GET /state` 预取** 等仍 **【未】**（**Unity If-Match** 见 **D17**）。
+
+#### 本次续写（2026-04-21 · D17 续十七）— Unity `POST /sync` 带 If-Match
+
+1. **`PlayerStateExportSimple`**：字段 **`syncUseIfMatch`**（默认 **true**）；**`LastIfMatchWasSent`**、**`LastServerETag`**（观测）。
+2. **逻辑**：按 **`playerId`** 读 **`PlayerPrefs`** 中上次 **`ETag`**（**`EOD_SYNC_ETAG_*`**）；非空则 **`If-Match: "<sha256hex>"`**；**200** / **412** 从响应头更新存档。
+3. **HUD**：**`syn:precond`** 对应 **412** **`precondition_failed`**（与 **`syn:ok`** 等同链）。
+4. **关闭**：**`syncUseIfMatch=false`** 时不发 **`If-Match`**（旧服或排查）。
+
+#### 本次续写（2026-04-19 · 会话收尾）— Git 与文件状态
+
+1. **GitHub `main`**：已与 **`origin/main`** 对齐并完成推送（合流使用 **`merge origin/main -X ours`**：同路径冲突时 **保留本机版本**；远程侧多出的 **`docs/weekly/`**、**`server/README.md`**、**`server/examples/*`** 等已并入）。
+2. **`persist_sync`**：**D16** **`ETag`/`If-Match`** 与 **`npm run check-syntax`**（见 **`EpochOfDawn/server/package.json`**）已在工程内。
+3. **双 README 说明**：完整规约与进度总账在 **`d:\mygame\README.MD`**；仓库内另有根目录 **`README.md`**（架构长文节选），续写以 **`README.MD`** + **`EpochOfDawn/docs/getting-started.md`** 为对照即可。
+4. **下一会话**：直接复制下文「**续接口令**」开聊。
 
 ## 新对话续接（必读）
 
@@ -622,7 +637,7 @@
 - **主要脚本（均在 `Assets/`）：** `PlayerMoveSimple`、`PlayerAttackSimple`、`PlayerPickupSimple`、`MonsterCombatHost`、`MonsterChaseHost`、`MonsterP1A1Mark`、`P1A1QuestState`（含 **`P1AContentConfig`** 类型）、`P1A1WildSpawner`、`WaveSpawnerSimple`、`P1MiniBossSimple`、`P1BossPhaseSimple`、`P1MiniBossSceneBootstrap`、`DropItemSimple`、`DebugHudSimple`、`PlayerProgressSimple`、`PlayerInventorySimple`、`PlayerBankSimple`、`PlayerSaveSimple`、`PlayerStateExportSimple`（partial：`Export` / `Network` / **`Input`** / **`SyncResponseParse`**）、`ServerAuditLogSimple`、`PlayerAreaStateSimple`、`SafeZoneSimple`、`AreaPortalSimple`、`WorldZoneConfigSimple`、`PartyPlaceholderSimple`、`ChatPlaceholderSimple`；**Editor**：`EpochOfDawnBuildP1A5`（P1-A-5 一键 Windows 构建）（名称以工程为准）
 
 **续接口令（复制即可）：**  
-`继续《破晓纪元》开发。已读 d:\mygame\README.MD 里「新对话续接」与「今日开发日志」。当前状态：D4 Flow:OK；P1-A 完成；P2-D5 完成；**P3** **SrvVal_*** + **P3-2**；**persist_sync** **durationMs/httpStatus** + **`replayObservation`** + **可选 `SYNC_ISSUED_AT_MAX_SKEW_SEC`** + **`/rehearsal/patch-strategy`** + **`POST /rehearsal/validate-patch`** + **`POST /rehearsal/apply-patch`**（**`REHEARSAL_PATCH_WRITE=1`**）+ **`GET /state`/`POST /sync`/`apply-patch` 的 ETag/If-Match（D16）** + **`GET /rehearsal/etag-concurrency`** + **可选 `SYNC_ETAG_DISABLED`** + **`/rehearsal/audit-state-strict`** + **`/rehearsal/compliance-bundle`** + **`/rehearsal/warning-srvval-bridge`** + **`/rehearsal/idempotency-persist`** + **可选 `SYNC_WARNING_SRVVAL_BRIDGE`** / **`WARNING_CODE_TO_SRVVAL_JSON`** + **可选 `SYNC_AUDIT_STATE_STRICT`** + **可选 `SYNC_IDEMPOTENCY_PERSIST`** + **可选 `LOG_REDACT_PII`**；**`npm run check-schema-version`** / **`check-schema-snapshot`** / **`validate-patch-rehearsal`** / **`audit-export-bundle`** / **`metrics-archive`**；**Grafana** **`EpochOfDawn/server/examples/grafana-persist-sync-minimal.json`**；**10×20** **`EpochOfDawn/docs/p3-d5-waves-10x20.md`**；**GitHub Actions** **`d5-validate.yml`**；**F2** **`tot:`** **`syn:`** **`d:ms`** **`r:`** + **`;`** **`AudC:`**；**Unity EditMode** **`AuditSummaryHudPreviewTests`**；**`p3-d5-roadmap-200.md`**；D5 F12/F4/F3/F2/F1。你改 EpochOfDawn/Assets 脚本。`
+`继续《破晓纪元》开发。已读 d:\mygame\README.MD 里「新对话续接」与「今日开发日志」。当前状态：D4 Flow:OK；P1-A 完成；P2-D5 完成；**P3** **SrvVal_*** + **P3-2**；**persist_sync** **durationMs/httpStatus** + **`replayObservation`** + **可选 `SYNC_ISSUED_AT_MAX_SKEW_SEC`** + **`/rehearsal/patch-strategy`** + **`POST /rehearsal/validate-patch`** + **`POST /rehearsal/apply-patch`**（**`REHEARSAL_PATCH_WRITE=1`**）+ **`GET /state`/`POST /sync`/`apply-patch` 的 ETag/If-Match（D16）** + **Unity `PlayerStateExportSimple` `syncUseIfMatch` + `If-Match`（D17）** + **`GET /rehearsal/etag-concurrency`** + **可选 `SYNC_ETAG_DISABLED`** + **`/rehearsal/audit-state-strict`** + **`/rehearsal/compliance-bundle`** + **`/rehearsal/warning-srvval-bridge`** + **`/rehearsal/idempotency-persist`** + **可选 `SYNC_WARNING_SRVVAL_BRIDGE`** / **`WARNING_CODE_TO_SRVVAL_JSON`** + **可选 `SYNC_AUDIT_STATE_STRICT`** + **可选 `SYNC_IDEMPOTENCY_PERSIST`** + **可选 `LOG_REDACT_PII`**；**`npm run check-schema-version`** / **`check-schema-snapshot`** / **`validate-patch-rehearsal`** / **`audit-export-bundle`** / **`metrics-archive`**；**Grafana** **`EpochOfDawn/server/examples/grafana-persist-sync-minimal.json`**；**10×20** **`EpochOfDawn/docs/p3-d5-waves-10x20.md`**；**GitHub Actions** **`d5-validate.yml`**；**F2** **`tot:`** **`syn:`** **`d:ms`** **`r:`** + **`;`** **`AudC:`**；**Unity EditMode** **`AuditSummaryHudPreviewTests`**；**`p3-d5-roadmap-200.md`**；D5 F12/F4/F3/F2/F1。你改 EpochOfDawn/Assets 脚本。`
 
 ---
 
