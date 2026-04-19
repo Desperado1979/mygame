@@ -1,0 +1,30 @@
+{
+  "playerId": "local_player_001",
+  "version": 1,
+  "level": 6,
+  "xp": {
+    "xpIntoLevel": 14,
+    "xpBank": 22,
+    "skillPoints": 3
+  },
+  "gold": 187,
+  "inventory": {
+    "hpPotion": 5,
+    "mpPotion": 4,
+    "weight": 11.0
+  },
+  "skills": {
+    "qTier": 2,
+    "rTier": 1,
+    "qLevel": 4,
+    "rLevel": 3
+  },
+  "bank": {
+    "gold": 120,
+    "hpPotion": 2,
+    "mpPotion": 1
+  },
+  "hpNow": 230,
+  "hpMax": 260,
+  "exportedAtUtc": "2026-04-14T10:00:00.0000000Z"
+}
