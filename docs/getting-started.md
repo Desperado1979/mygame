@@ -97,6 +97,8 @@
 
 **D16（续十六）补充**：**`GET /state`** / **`POST /sync`** / **`POST /rehearsal/apply-patch`** 成功响应带 **`ETag`**（存档 UTF-8 字节的 **SHA-256**）；可送 **`If-Match`** 做乐观并发（**412** **`precondition_failed`**）；**`GET /rehearsal/etag-concurrency`**；上表 **`SYNC_ETAG_DISABLED`**。详见 **`README.MD`**「本次续写 · D16 续十六」。
 
+**D17（续十七）补充**：**`PlayerStateExportSimple`**：**`syncUseIfMatch`**（默认 **true**）时按 **`playerId`** 用 **`PlayerPrefs`** 记忆 **`ETag`** 并在 **`POST /sync`** 发送 **`If-Match`**；**412** → HUD **`syn:precond`**。详见 **`README.MD`**「本次续写 · D17 续十七」。
+
 **Docker**：在 **`EpochOfDawn/server/`** 执行 **`docker compose up`**（映射 **8787**）。**NDJSON**：**`npm run merge-metrics-ndjson -- data/metrics.ndjson`** 或管道排序。**k6**（可选）：**`k6 run examples/k6-smoke.js`**。
 
 **SLO 摘要**：**`GET /metrics/sync-summary?days=7`**；CLI：**`npm run sync-summary`**。**Mock 响应**：**`GET /rehearsal/mock-sync-200`**。**审计重放**：**`npm run audit-replay -- examples/request_payload_example.json`**。**环境变量模板**：**`EpochOfDawn/server/.env.example`**。

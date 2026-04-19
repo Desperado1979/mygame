@@ -144,7 +144,7 @@
 7. **里程碑**：排练写 **`state`**。
 8. **ETag** → **D16** **【已】**。
 9. **`.env.example`**。
-10. **Unity 客户端** 未接 **apply-patch** / **If-Match**（仍 **【未】**）。
+10. **Unity** **`POST /sync` `If-Match`** → **D17** **【已】**；**`apply-patch`** / **`GET /state` 预取** 仍 **【未】**。
 
 ---
 
@@ -158,3 +158,13 @@
 6. **验收**：见 **`README`**「D16 续十六」。
 7. **`.env.example`**：**`SYNC_ETAG_DISABLED`**。
 8. **Redis** 仍 **【未】**。
+
+---
+
+## 续波 17（D17 续十七 · ~5 步）— 已落地
+
+1. **`PlayerStateExportSimple.syncUseIfMatch`**（默认 **true**）。
+2. **`PlayerPrefs`** **`EOD_SYNC_ETAG_*`** + **`If-Match`** on **`POST /sync`**。
+3. **412** → **`syn:precond`**。
+4. **验收**：**`README`**「D17 续十七」。
+5. **`GET /state` 预取** 仍 **【未】**。

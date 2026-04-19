@@ -8,6 +8,38 @@ using UnityEngine.Networking;
 public partial class PlayerStateExportSimple
 {
     const int MaxSyncPostAttempts = 2;
+    const string EtagPrefsPrefix = "EOD_SYNC_ETAG_";
+
+    static string PrefsKeyForPlayerEtag(string playerId)
+    {
+        if (string.IsNullOrEmpty(playerId)) playerId = "anonymous";
+        var sb = new StringBuilder(EtagPrefsPrefix, EtagPrefsPrefix.Length + playerId.Length);
+        foreach (char c in playerId)
+        {
+            if (char.IsLetterOrDigit(c) || c == '_' || c == '-') sb.Append(c);
+            else sb.Append('_');
+        }
+        string k = sb.ToString();
+        return k.Length > 200 ? k.Substring(0, 200) : k;
+    }
+
+    static string NormalizeEtagHeader(string raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return "";
+        string s = raw.Trim();
+        if (s.Length >= 2 && s[0] == '"' && s[s.Length - 1] == '"')
+            s = s.Substring(1, s.Length - 2);
+        return s.Trim();
+    }
+
+    string LoadSavedEtag(string playerId) => PlayerPrefs.GetString(PrefsKeyForPlayerEtag(playerId), "");
+
+    void SaveSavedEtag(string playerId, string etagHexNoQuotes)
+    {
+        if (string.IsNullOrEmpty(etagHexNoQuotes)) return;
+        PlayerPrefs.SetString(PrefsKeyForPlayerEtag(playerId), etagHexNoQuotes);
+        PlayerPrefs.Save();
+    }
 
     public IEnumerator PostSyncRoutine()
     {
@@ -20,6 +52,7 @@ public partial class PlayerStateExportSimple
         string json = JsonUtility.ToJson(body, true);
         byte[] raw = Encoding.UTF8.GetBytes(json);
         LastSyncRetryCount = 0;
+        string pidForEtag = body != null && !string.IsNullOrEmpty(body.playerId) ? body.playerId : playerId;
 
         for (int attempt = 1; attempt <= MaxSyncPostAttempts; attempt++)
         {
@@ -29,6 +62,16 @@ public partial class PlayerStateExportSimple
                 req.downloadHandler = new DownloadHandlerBuffer();
                 req.SetRequestHeader("Content-Type", "application/json");
                 LastSyncDurationMs = -1;
+                LastIfMatchWasSent = false;
+                if (syncUseIfMatch)
+                {
+                    string saved = LoadSavedEtag(pidForEtag);
+                    if (!string.IsNullOrEmpty(saved))
+                    {
+                        req.SetRequestHeader("If-Match", "\"" + saved + "\"");
+                        LastIfMatchWasSent = true;
+                    }
+                }
                 yield return req.SendWebRequest();
 
                 LastHttpCode = (int)req.responseCode;
@@ -39,6 +82,13 @@ public partial class PlayerStateExportSimple
                 LastSyncPostStatusTag = ClassifySyncPostStatus(LastHttpCode, text);
                 string durHdr = req.GetResponseHeader("X-Sync-Duration-Ms");
                 LastSyncDurationMs = int.TryParse(durHdr, out int dms) ? dms : -1;
+
+                string etagHdr = req.GetResponseHeader("ETag");
+                if (string.IsNullOrEmpty(etagHdr)) etagHdr = req.GetResponseHeader("etag");
+                string etagNorm = NormalizeEtagHeader(etagHdr);
+                LastServerETag = etagNorm;
+                if (!string.IsNullOrEmpty(etagNorm) && (LastHttpCode == 200 || LastHttpCode == 412))
+                    SaveSavedEtag(pidForEtag, etagNorm);
 
                 if (LastHttpCode == 429 && attempt < MaxSyncPostAttempts)
                 {
@@ -147,6 +197,7 @@ public partial class PlayerStateExportSimple
         switch (httpCode)
         {
             case 429: return "ratelimit";
+            case 412: return "precond";
             case 503: return "maint";
             case 401: return "hmac";
             case 403: return "staging";

@@ -14,6 +14,9 @@ public partial class PlayerStateExportSimple : MonoBehaviour
     [Tooltip("POST /sync 与 GET 排练根地址；可在运行时由 PlayerPrefs EOD_SYNC_BASE_URL 覆盖。")]
     public string syncBaseUrl = "http://127.0.0.1:8787";
 
+    [Tooltip("D17：与 persist_sync D16 对齐，若本地存有上次 ETag 则在 POST /sync 带 If-Match；关闭则从不发送（旧服调试）。")]
+    public bool syncUseIfMatch = true;
+
     public bool networkSyncEnabled = true;
 
     public int LastHttpCode;
@@ -44,6 +47,12 @@ public partial class PlayerStateExportSimple : MonoBehaviour
 
     /// <summary><c>POST /sync</c> 因 **429** 重试的次数（仅统计已发生的等待重试）。</summary>
     public int LastSyncRetryCount;
+
+    /// <summary>D17：最近一次从 <c>POST /sync</c> 响应头 <c>ETag</c> 解析出的强校验值（十六进制，无引号）；未收到则为空。</summary>
+    public string LastServerETag = "";
+
+    /// <summary>D17：本次 POST 是否已带 <c>If-Match</c>（仅观测）。</summary>
+    public bool LastIfMatchWasSent;
 
     public PlayerProgressSimple progress;
     public PlayerWalletSimple wallet;
