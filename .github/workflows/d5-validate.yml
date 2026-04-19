@@ -1,0 +1,43 @@
+# D5: schema + audit_validate on example sync payload (no Unity).
+# Repo root = Unity 工程 EpochOfDawn（paths 不含 EpochOfDawn/ 前缀）。
+name: D5 validate
+on:
+  push:
+    paths:
+      - "server/**"
+      - ".github/workflows/d5-validate.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/d5-validate.yml"
+
+jobs:
+  validate-example-sync:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: node --check (core tools)
+        run: npm run check-syntax
+      - name: validate_sync_file (example payload)
+        run: node tools/validate_sync_file.cjs examples/request_payload_example.json
+      - name: audit_replay_cli (gold/potion tail vs state)
+        run: node tools/audit_replay_cli.cjs examples/request_payload_example.json
+      - name: check_schema_version_constants (Unity vs schema)
+        run: node tools/check_schema_version_constants.cjs
+      - name: check_schema_files_snapshot (schemas/*.schema.json sha256)
+        run: node tools/check_schema_files_snapshot.cjs
+      - name: audit_export_bundle (local S3-style manifest)
+        run: node tools/audit_export_bundle.cjs --days=30
+      - name: locale placeholder CI (skip if no Localization/)
+        run: node tools/check_locale_placeholder.cjs
+      - name: patch_validate_rehearsal (--smoke)
+        run: node tools/patch_validate_rehearsal.cjs --smoke

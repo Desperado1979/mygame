@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4045dfe4ebef23447bc2c998888819f3, type: 3}
+  m_Name: DefaultP1AContent
+  m_EditorClassIdentifier: Assembly-CSharp::P1AContentConfig
+  p1TargetKills: 5
+  waveEnemyCounts:
+  - 2
+  - 3
+  - 5
+  delayBetweenWaves: 2
+  waveSpawnRingRadius: 8
+  wildEnemyCount: 5
+  wildRingRadius: 8
+  miniBossHpMultiplier: 3
+  bossPhaseHpFraction: 0.5
+  bossPhaseChaseSpeedMul: 1.25

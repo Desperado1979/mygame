@@ -16,15 +16,21 @@ public class PlayerAttackSimple : MonoBehaviour
                 EnemyHealthSimple enemy = hits[0].GetComponent<EnemyHealthSimple>();
                 if (enemy != null)
                 {
-                    enemy.TakeHit(damagePerHit);
+                    enemy.TakeHit(damagePerHit, transform.position);
                 }
                 else
                 {
+                    ServerAuditLogSimple.Push(
+                        ServerAuditLogSimple.CategorySrvValCombatMiss,
+                        $"reason=no_enemy_health&hit={hits[0].name}");
                     Debug.Log("Hit Enemy: " + hits[0].name + " (no EnemyHealthSimple)");
                 }
             }
             else
             {
+                ServerAuditLogSimple.Push(
+                    ServerAuditLogSimple.CategorySrvValCombatMiss,
+                    $"range={attackRange:F1}");
                 Debug.Log("Attack Miss");
             }
         }

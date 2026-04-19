@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AuditEventV1",
+  "type": "object",
+  "required": ["seq", "ts", "category", "payload"],
+  "properties": {
+    "seq": { "type": "integer", "minimum": 1 },
+    "ts": { "type": "string" },
+    "category": { "type": "string" },
+    "payload": { "type": "string" }
+  }
+}

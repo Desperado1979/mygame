@@ -1,0 +1,2 @@
+playerId,riskScore,requests,rejected,acceptRate,high,low,alerts
+local_player_001,0,1,0,100,0,0,acceptRate 100% < 101%

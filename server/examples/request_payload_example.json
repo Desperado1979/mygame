@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "mode": "dry_run_no_network",
+  "issuedAtUtc": "2026-04-15T10:00:00.0000000Z",
+  "playerId": "local_player_001",
+  "meta": {
+    "metaSchemaVersion": 1,
+    "unityVersion": "2022.3.xf1",
+    "saveSchemaVersion": 1,
+    "sessionRunId": "example_session_id",
+    "productName": "EpochOfDawn",
+    "signaturePlaceholder": ""
+  },
+  "state": {
+    "playerId": "local_player_001",
+    "version": 1,
+    "level": 2,
+    "xp": {
+      "xpIntoLevel": 10,
+      "xpBank": 5,
+      "skillPoints": 0
+    },
+    "gold": 30,
+    "inventory": {
+      "hpPotion": 1,
+      "mpPotion": 1,
+      "weight": 8.0
+    },
+    "skills": {
+      "qTier": 1,
+      "rTier": 1,
+      "qLevel": 1,
+      "rLevel": 1
+    },
+    "bank": {
+      "gold": 0,
+      "hpPotion": 0,
+      "mpPotion": 0
+    },
+    "hpNow": 80,
+    "hpMax": 100,
+    "exportedAtUtc": "2026-04-15T10:00:00.0000000Z"
+  },
+  "audit": [
+    {
+      "seq": 1,
+      "ts": "2026-04-15T09:59:00.0000000Z",
+      "category": "gold_add",
+      "payload": "+30,now=30"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-04-15T09:59:01.0000000Z",
+      "category": "inv_add",
+      "payload": "potion,count=1,w=1.0"
+    }
+  ]
+}

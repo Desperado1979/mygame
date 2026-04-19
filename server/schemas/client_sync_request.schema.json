@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ClientSyncRequestPayloadV1",
+  "type": "object",
+  "required": ["schemaVersion", "mode", "issuedAtUtc", "playerId", "meta", "state", "audit"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "mode": { "type": "string", "description": "Placeholder: client does not send over the network when mode is dry_run_no_network" },
+    "issuedAtUtc": { "type": "string" },
+    "playerId": { "type": "string" },
+    "meta": {
+      "type": "object",
+      "required": [
+        "metaSchemaVersion",
+        "unityVersion",
+        "saveSchemaVersion",
+        "sessionRunId",
+        "productName",
+        "signaturePlaceholder"
+      ],
+      "properties": {
+        "metaSchemaVersion": { "type": "integer", "minimum": 1 },
+        "unityVersion": { "type": "string" },
+        "saveSchemaVersion": { "type": "integer", "minimum": 1 },
+        "sessionRunId": { "type": "string" },
+        "productName": { "type": "string" },
+        "signaturePlaceholder": { "type": "string" }
+      }
+    },
+    "state": { "type": "object" },
+    "audit": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["seq", "ts", "category", "payload"],
+        "properties": {
+          "seq": { "type": "integer", "minimum": 1 },
+          "ts": { "type": "string" },
+          "category": { "type": "string" },
+          "payload": { "type": "string" }
+        }
+      }
+    }
+  }
+}

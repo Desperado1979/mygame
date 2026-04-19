@@ -1,0 +1,8 @@
+{
+  "v": 1,
+  "files": {
+    "schemas/audit_event.schema.json": "a94b90d59135b2de2512803240bacbd5200dac8f445f91839d2e41789abae87a",
+    "schemas/client_sync_request.schema.json": "122a4e460511d8a4436b5444a6e05cdeff940948b36f25d8e2774de69f5668fe",
+    "schemas/player_state.schema.json": "723da43f2b1fbe9b08f62cb290ce3dfc4066b85ad86ec2988858d31df45b17c4"
+  }
+}

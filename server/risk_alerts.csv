@@ -1,0 +1,2 @@
+severity,code,message,value,threshold
+high,accept_rate_below_threshold,acceptRate 100% < 101%,100,101

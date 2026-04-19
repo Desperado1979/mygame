@@ -29,6 +29,29 @@ public class PlayerPickupSimple : MonoBehaviour
             }
         }
 
+        DropItemSimple drop = closest.GetComponent<DropItemSimple>();
+        float w = drop != null ? drop.pickupWeight : 1f;
+        string id = drop != null ? drop.pickupId : GameItemIdsSimple.GenericDrop;
+        int count = drop != null ? drop.pickupCount : 1;
+        if (drop != null && !drop.CanBePickedBy(transform))
+        {
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValPickupDenied,
+                $"id={id}&reason=owner_protect&remainSec={Mathf.Max(0f, drop.ownerProtectUntil - Time.time):F1}");
+            Debug.Log($"该掉落暂时受归属保护 ({Mathf.Max(0f, drop.ownerProtectUntil - Time.time):F1}s)");
+            return;
+        }
+
+        PlayerInventorySimple inv = GetComponent<PlayerInventorySimple>();
+        if (inv != null)
+        {
+            if (!inv.TryAddPickup(w, id, count))
+            {
+                Debug.Log("背包已满（超重），无法拾取");
+                return;
+            }
+        }
+
         Debug.Log("Picked: " + closest.name);
         Destroy(closest.gameObject);
     }

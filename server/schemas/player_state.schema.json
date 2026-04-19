@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PlayerStateExportV1",
+  "type": "object",
+  "required": [
+    "playerId",
+    "version",
+    "level",
+    "xp",
+    "gold",
+    "inventory",
+    "skills",
+    "bank",
+    "hpNow",
+    "hpMax",
+    "exportedAtUtc"
+  ],
+  "properties": {
+    "playerId": { "type": "string" },
+    "version": { "type": "integer" },
+    "level": { "type": "integer", "minimum": 1 },
+    "gold": { "type": "number" },
+    "xp": {
+      "type": "object",
+      "required": ["xpIntoLevel", "xpBank", "skillPoints"],
+      "properties": {
+        "xpIntoLevel": { "type": "integer" },
+        "xpBank": { "type": "integer" },
+        "skillPoints": { "type": "integer" }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "required": ["hpPotion", "mpPotion", "weight"],
+      "properties": {
+        "hpPotion": { "type": "number", "minimum": 0 },
+        "mpPotion": { "type": "number", "minimum": 0 },
+        "weight": { "type": "number" }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "required": ["qTier", "rTier", "qLevel", "rLevel"],
+      "properties": {
+        "qTier": { "type": "integer" },
+        "rTier": { "type": "integer" },
+        "qLevel": { "type": "integer" },
+        "rLevel": { "type": "integer" }
+      }
+    },
+    "bank": {
+      "type": "object",
+      "required": ["gold", "hpPotion", "mpPotion"],
+      "properties": {
+        "gold": { "type": "number" },
+        "hpPotion": { "type": "number" },
+        "mpPotion": { "type": "number" }
+      }
+    },
+    "hpNow": { "type": "integer" },
+    "hpMax": { "type": "integer" },
+    "exportedAtUtc": { "type": "string" }
+  }
+}

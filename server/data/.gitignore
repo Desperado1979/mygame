@@ -1,0 +1,4 @@
+# Local rehearsal saves (written by tools/persist_sync.cjs)
+*.json
+*.ndjson
+!.gitkeep

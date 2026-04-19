@@ -1,0 +1,14 @@
+section,key,value
+summary,requests_total,1
+summary,accept_rate,100
+summary,warnings_low,0
+summary,warnings_high,0
+
+section,player,risk_meta
+players,local_player_001,risk=0|req=1|rej=0
+
+section,code,count
+
+section,reason,count
+
+section,alert,message
