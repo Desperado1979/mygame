@@ -151,4 +151,4 @@ npm run validate "C:/Users/<你>/AppData/LocalLow/DefaultCompany/EpochOfDawn/cli
 
 ---
 
-**会话收尾备忘（2026-04-19）**：**`origin/main`** 已推送；**D16**（**`ETag`/`If-Match`**）与 **`npm run check-syntax`** 在 **`server/`**；完整进度与「续接口令」见仓库上级 **`README.MD`**（若仅克隆本工程，以本 **`docs/`** + 根目录 **`README.md`** 对照）。
+**会话收尾备忘（2026-04-19）**：**`origin/main`** 已推送；**D16**（**`ETag`/`If-Match`**）与 **`npm run check-syntax`** 在 **`server/`**；完整进度与「续接口令」见工程根目录 **`README.MD`**（与上级工作区 **`d:\mygame\README.MD`** 宜保持同步）。
