@@ -3,17 +3,20 @@ using UnityEngine;
 /// <summary>Simple enemy chase: detect player, chase, then leash back to spawn.</summary>
 public class EnemyChaseSimple : MonoBehaviour
 {
-    public float moveSpeed = 2.8f;
-    public float detectRange = 9f;
-    public float stopRange = 1.1f;
-    public float leashRangeFromSpawn = 14f;
+    [Header("Chase tuning")]
+    public float moveSpeed = 3.4f;
+    public float detectRange = 16f;
+    public float stopRange = 1.05f;
+    public float leashRangeFromSpawn = 26f;
 
     Vector3 spawnPos;
     Transform player;
+    EnemyStatusEffectsSimple _fx;
 
     void Start()
     {
         spawnPos = transform.position;
+        _fx = GetComponent<EnemyStatusEffectsSimple>();
     }
 
     void Update()
@@ -23,8 +26,9 @@ public class EnemyChaseSimple : MonoBehaviour
         if (player == null)
             return;
 
-        EnemyStatusEffectsSimple fx = GetComponent<EnemyStatusEffectsSimple>();
-        if (fx != null && fx.IsFrozen)
+        if (_fx == null)
+            _fx = GetComponent<EnemyStatusEffectsSimple>();
+        if (_fx != null && _fx.IsFrozen)
             return;
 
         // In safe-zone, enemy returns to spawn instead of pushing in.

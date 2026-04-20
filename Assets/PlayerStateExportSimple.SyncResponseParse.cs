@@ -62,7 +62,7 @@ public partial class PlayerStateExportSimple
         return sb.ToString();
     }
 
-    /// <summary>供 EditMode 测试与调试：与 <see cref="BuildAuditSummaryHudPreview"/> 相同，从整段同步响应 JSON 生成 HUD 审计摘要短串。</summary>
+    /// <summary>供编辑器自检菜单与调试：与 <see cref="BuildAuditSummaryHudPreview"/> 相同，从整段同步响应 JSON 生成 HUD 审计摘要短串。</summary>
     public static string AuditSummaryHudPreviewFromJson(string json) => BuildAuditSummaryHudPreview(json);
 
     /// <summary>从响应 JSON 中取 <c>validation.ok</c>（见 <c>persist_sync.cjs</c> 200/400 体）。解析失败则 <c>null</c>。</summary>

@@ -206,7 +206,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &127434661
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219,7 +219,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d55f6536d90b63046aaf847e97f4c297, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyPrefab: {fileID: 5204939915484738632, guid: aa17dc7d199679f4ea2a7183099d3743,
+  enemyPrefab: {fileID: 5204939915484738632, guid: c3d4e5f6a7b809112233445566778899,
     type: 3}
   spawnPoint: {fileID: 127434662}
   respawnDelay: 3
@@ -788,7 +788,13 @@ MonoBehaviour:
   postSyncToServer: 283
   metricsAlertsPlayers: 91
   metricsDashboard: 93
+  metricsAuditCategories: 59
   probeServerHealth: 282
+  metricsAlertsPlayersAlt: 106
+  metricsDashboardAlt: 108
+  probeServerHealthAlt: 48
+  postSyncToServerAlt: 45
+  metricsAuditCategoriesAlt: 0
 --- !u!114 &232738311
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -839,6 +845,8 @@ MonoBehaviour:
   requestExportFileName: client_sync_request.json
   lastSyncSnapshotFileName: last_sync_response.json
   syncBaseUrl: http://127.0.0.1:8787
+  syncUseIfMatch: 1
+  syncPrefetchStateEtag: 1
   networkSyncEnabled: 1
   LastHttpCode: 0
   LastSyncWarnLow: 0
@@ -849,7 +857,15 @@ MonoBehaviour:
   LastPostResponsePreview: 
   LastMetricsAlertsPreview: 
   LastMetricsDashboardPreview: 
+  LastMetricsAuditCategoriesPreview: 
   LastHealthProbePreview: 
+  LastAuditCategoryPreview: 
+  LastSyncPostStatusTag: 
+  LastSyncDurationMs: -1
+  LastSyncRetryCount: 0
+  LastServerETag: 
+  LastIfMatchWasSent: 0
+  LastStateEtagPrefetchRan: 0
   progress: {fileID: 232738299}
   wallet: {fileID: 232738301}
   inventory: {fileID: 232738298}
@@ -1259,6 +1275,16 @@ MonoBehaviour:
   target: {fileID: 232738288}
   offset: {x: 0, y: 8, z: -10}
   smooth: 8
+  enableOrbit: 1
+  orbitMouseButton: 1
+  orbitSensitivity: 3
+  invertY: 1
+  minPitch: -15
+  maxPitch: 75
+  enableZoom: 1
+  zoomSensitivity: 3
+  minDistance: 4
+  maxDistance: 30
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1456,6 +1482,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   radius: 2
   zoneConfig: {fileID: 561859369}
+  syncFromZoneConfig: 0
+  keepSyncInPlayMode: 0
 --- !u!4 &725638583
 Transform:
   m_ObjectHideFlags: 0
@@ -1465,7 +1493,7 @@ Transform:
   m_GameObject: {fileID: 725638581}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5, y: 1, z: 5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1638,7 +1666,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &902001011
 Transform:
   m_ObjectHideFlags: 0
@@ -1648,7 +1676,7 @@ Transform:
   m_GameObject: {fileID: 902001010}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12, y: 0, z: 12}
+  m_LocalPosition: {x: 25, y: 0, z: 25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1671,6 +1699,109 @@ MonoBehaviour:
   count: 5
   ringRadius: 8
   contentConfig: {fileID: 0}
+--- !u!1 &902002010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 902002011}
+  - component: {fileID: 902002012}
+  m_Layer: 0
+  m_Name: P1A_WaveSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &902002011
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 902002010}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 10, y: 0, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &902002012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 902002010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bee3c8359c9fb174582ee7c546a7c23d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyPrefab: {fileID: 5204939915484738632, guid: aa17dc7d199679f4ea2a7183099d3743,
+    type: 3}
+  contentConfig: {fileID: 0}
+  useDefaultConfigWhenMissing: 1
+  waveEnemyCounts: 0a0000000a0000000a0000000a0000000a0000000a0000000a0000000a0000000a0000000a000000
+  overrideWaveEnemyCountsFromInspector: 0
+  delayBetweenWaves: 2
+  spawnRingRadius: 8
+  spawnY: 0.5
+  loopWaves: 1
+  center: {fileID: 0}
+  currentWaveIndex: 0
+  allWavesComplete: 0
+--- !u!1 &902003010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 902003011}
+  - component: {fileID: 902003012}
+  m_Layer: 0
+  m_Name: P1A_MiniBossBootstrap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &902003011
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 902003010}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &902003012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 902003010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  miniBossPrefab: {fileID: 0}
+  spawnPosition: {x: 24, y: 0.5, z: 16}
 --- !u!1 &1043230483
 GameObject:
   m_ObjectHideFlags: 0
@@ -1719,7 +1850,7 @@ MonoBehaviour:
     m_Alignment: 0
     m_AlignByGeometry: 0
     m_RichText: 1
-    m_HorizontalOverflow: 1
+    m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1.05
   m_Text: New Text
@@ -1742,13 +1873,14 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1170745098}
   m_Father: {fileID: 829448913}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 100, y: -100}
-  m_SizeDelta: {x: 200, y: 1000}
+  m_AnchoredPosition: {x: 100, y: -80}
+  m_SizeDelta: {x: 300, y: 1000}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1121866550
 GameObject:
@@ -1965,16 +2097,16 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1170745096}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 9.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1043230486}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -241.4, y: -120.2}
+  m_AnchoredPosition: {x: -491.39996, y: 140.3}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1170745099
@@ -2096,110 +2228,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &902002010
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 902002011}
-  - component: {fileID: 902002012}
-  m_Layer: 0
-  m_Name: P1A_WaveSpawner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &902002011
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 902002010}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &902002012
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 902002010}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bee3c8359c9fb174582ee7c546a7c23d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enemyPrefab: {fileID: 5204939915484738632, guid: aa17dc7d199679f4ea2a7183099d3743,
-    type: 3}
-  contentConfig: {fileID: 0}
-  waveEnemyCounts:
-  - 2
-  - 3
-  - 5
-  delayBetweenWaves: 2
-  spawnRingRadius: 8
-  spawnY: 0.5
-  loopWaves: 1
-  center: {fileID: 0}
-  currentWaveIndex: 0
-  allWavesComplete: 0
---- !u!1 &902003010
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 902003011}
-  - component: {fileID: 902003012}
-  m_Layer: 0
-  m_Name: P1A_MiniBossBootstrap
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &902003011
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 902003010}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &902003012
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 902003010}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  miniBossPrefab: {fileID: 0}
-  spawnPosition: {x: 24, y: 0.5, z: 16}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -2215,7 +2243,6 @@ SceneRoots:
   - {fileID: 902003011}
   - {fileID: 829448913}
   - {fileID: 106970347}
-  - {fileID: 1170745098}
   - {fileID: 2007341347}
   - {fileID: 725638583}
   - {fileID: 561859370}

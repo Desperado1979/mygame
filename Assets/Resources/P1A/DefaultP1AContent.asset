@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::P1AContentConfig
   p1TargetKills: 5
   waveEnemyCounts:
-  - 2
-  - 3
-  - 5
+  - 10
+  - 10
+  - 10
   delayBetweenWaves: 2
   waveSpawnRingRadius: 8
   wildEnemyCount: 5

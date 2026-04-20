@@ -6,6 +6,10 @@ public class SafeZoneSimple : MonoBehaviour
     public static SafeZoneSimple Instance { get; private set; }
     public float radius = 8f;
     public WorldZoneConfigSimple zoneConfig;
+    [Tooltip("开启后，每帧从 WorldZoneConfig 覆盖中心与半径；关闭后可在当前对象直接手调。")]
+    public bool syncFromZoneConfig = true;
+    [Tooltip("仅在 Play 模式生效：开启时运行中持续与 WorldZoneConfig 同步；关闭时只在启动时对齐一次，之后可手调。")]
+    public bool keepSyncInPlayMode = false;
 
     void Awake()
     {
@@ -15,7 +19,8 @@ public class SafeZoneSimple : MonoBehaviour
 
     void Update()
     {
-        SyncFromConfig();
+        if (syncFromZoneConfig && (!Application.isPlaying || keepSyncInPlayMode))
+            SyncFromConfig();
     }
 
     void OnDestroy()
@@ -35,6 +40,8 @@ public class SafeZoneSimple : MonoBehaviour
 
     void SyncFromConfig()
     {
+        if (!syncFromZoneConfig)
+            return;
         if (zoneConfig == null)
             return;
         if (zoneConfig.cityCenter != null)

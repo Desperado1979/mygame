@@ -121,7 +121,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043cef9cdfb9ddf4e99eaea5efc50604, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHp: 3
+  maxHp: 10
   xpOnKill: 8
   goldOnKill: 30
   dropPrefab: {fileID: 5854477858726258427, guid: 744726bd270256d4daf3db77b0f0f3f5,
@@ -139,6 +139,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 2.8
-  detectRange: 9
-  stopRange: 1.1
-  leashRangeFromSpawn: 14
+  detectRange: 18
+  stopRange: 1.4
+  leashRangeFromSpawn: 30

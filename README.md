@@ -16,7 +16,11 @@
 
 | 日期 | 阶段 | 目标 | 状态 | 结果/备注 |
 |------|------|------|------|-----------|
-| 2026-04-21 | **D17 续十七** | **Unity**：**`PlayerStateExportSimple`** **`POST /sync`** 带 **`If-Match`**（**`PlayerPrefs`** 存 **`ETag`**）；HUD **`syn:precond`**（412）；**`syncUseIfMatch`** 开关 | **已完成** | 见 **「本次续写 · D17 续十七」**；**`GET /state` 预取 ETag** 仍 **【未】** |
+| 2026-04-21 | **D21 续二一** | **帧率**：HUD **`StringBuilder`** 复用；**`EnemyStatusEffectsSimple`** 登记列表（**`E:`** / 近身状态，无周期性 **`FindObjectsOfType`**）；**`EnemyChaseSimple`** 缓存 **`GetComponent`** | **已完成** | 见 **「本次续写 · D21 续二一」**（纯客户端，**未更近**服权威） |
+| 2026-04-21 | **D20 续二十** | **玩测体验**：**`DebugHudSimple`** 敌人计数 / 近身状态 **节流**；**`syn:net`/`refused`/`timeout`**（未起服 / 拒连 / 超时） | **已完成** | 见 **「本次续写 · D20 续二十」** |
+| 2026-04-21 | **D19 续十九** | **进游戏测试准备**：HUD **`etg:pre`**（D18 预取）；**`getting-started`**「**进游戏验收（最小清单）**」 | **已完成** | 见 **「本次续写 · D19 续十九」**；**Redis / Unity apply-patch** 仍 **【未】**（不挡单机进测） |
+| 2026-04-21 | **D18 续十八** | **Unity**：**`GET /state` 预取 **`ETag`**（本地无缓存时 **F2** 先 GET 再 POST）；**`syncPrefetchStateEtag`** | **已完成** | 见 **「本次续写 · D18 续十八」** |
+| 2026-04-21 | **D17 续十七** | **Unity**：**`PlayerStateExportSimple`** **`POST /sync`** 带 **`If-Match`**（**`PlayerPrefs`** 存 **`ETag`**）；HUD **`syn:precond`**（412）；**`syncUseIfMatch`** 开关 | **已完成** | 见 **「本次续写 · D17 续十七」** |
 | 2026-04-21 | **D16 续十六** | **`ETag`** / **`If-Match`**：**`GET /state`**、**`POST /sync`**、**`POST /rehearsal/apply-patch`** 乐观并发；**`GET /rehearsal/etag-concurrency`**；**`SYNC_ETAG_DISABLED`** | **已完成** | 见 **「本次续写 · D16 续十六」**；**Redis** 仍 **【未】** |
 | 2026-04-21 | **D15 续十五** | **`REHEARSAL_PATCH_WRITE=1`**：**`POST /rehearsal/apply-patch`** 写 **`state`**；**`GET /rehearsal/apply-patch`** 说明；与 **`POST /sync`** 同校验链 | **已完成** | 见 **「本次续写 · D15 续十五」**；**生产 PATCH** 仍非目标 |
 | 2026-04-21 | **D14 续十四** | **`SYNC_AUDIT_STATE_STRICT`**：**audit 重放尾** vs **`state`** 不一致时 **400**；**`GET /rehearsal/audit-state-strict`**；**`audit_validate.cjs`** | **已完成** | 见 **「本次续写 · D14 续十四」**；**深度交叉** 收口一档 |
@@ -519,7 +523,7 @@
 8. **CI** **`.github/workflows/d5-validate.yml`**：增加 **`check-schema-snapshot`**、**`audit-export-bundle`**、**`check-locale-ci`**（无 **`Assets/Localization`** 时 **skip**）。
 9. **`tools/check_locale_placeholder.cjs`** + **`npm run check-locale-ci`**：占位，后续接多语言资源校验。
 10. **Unity**：**`PlayerStateExportSimple.AuditSummaryHudPreviewFromJson`**（与私有 **`BuildAuditSummaryHudPreview`** 等价）。
-11. **`Assets/Tests/EditMode/`**：**`EpochOfDawn.Tests.EditMode.asmdef`** + **`AuditSummaryHudPreviewTests`**（**NUnit**）。
+11. **`Assets/Editor/AuditSummaryHudPreviewSelfTest.cs`**：菜单 **`EpochOfDawn → Tests → Run Audit HUD Preview Self-Test`**（**`AuditSummaryHudPreviewFromJson`** 契约，避免独立测试 asmdef 与 **`Assembly-CSharp`** 引用异常）。
 12. **`.env.example`**：已列 **D10** 变量。
 13. **里程碑原则**：合规与导出仍为**排练/可观测**；**权威**仍在服务端 **`validate`** 与产品策略。
 14. **与 D9**：**`replayObservation`**、**`SYNC_ISSUED_AT_MAX_SKEW_SEC`** 不变。
@@ -606,7 +610,7 @@
 7. **`GET /rehearsal/etag-concurrency`**：机器可读说明；**`GET /health`**：**`syncEtagIfMatchEnabled`**、**`rehearsalEtagConcurrencyPath`**。
 8. **`GET /rehearsal/compliance-bundle`**：**`relatedPaths.etagConcurrency`**；**`GET /rehearsal/patch-strategy`** 规则已更新 **D16**。
 9. **`.env.example`**：已列 **D16**。
-10. **下一批**：**Redis**、**`GET /state` 预取** 等仍 **【未】**（**Unity If-Match** 见 **D17**）。
+10. **下一批**：**Redis** 等仍 **【未】**（**Unity `GET /state` 预取** 见 **D18**）。
 
 #### 本次续写（2026-04-21 · D17 续十七）— Unity `POST /sync` 带 If-Match
 
@@ -614,6 +618,33 @@
 2. **逻辑**：按 **`playerId`** 读 **`PlayerPrefs`** 中上次 **`ETag`**（**`EOD_SYNC_ETAG_*`**）；非空则 **`If-Match: "<sha256hex>"`**；**200** / **412** 从响应头更新存档。
 3. **HUD**：**`syn:precond`** 对应 **412** **`precondition_failed`**（与 **`syn:ok`** 等同链）。
 4. **关闭**：**`syncUseIfMatch=false`** 时不发 **`If-Match`**（旧服或排查）。
+
+#### 本次续写（2026-04-21 · D18 续十八）— Unity `GET /state` 预取 ETag
+
+1. **`syncPrefetchStateEtag`**（默认 **true**）：若 **`syncUseIfMatch`** 且 **`PlayerPrefs`** 尚无该 **`playerId`** 的 ETag，则在 **`POST /sync`** 之前 **`GET /state?playerId=`**，把响应头 **`ETag`** 写入 **`PlayerPrefs`**（与 D16 服务端一致）。
+2. **404**：无存档则跳过预取，POST 仍可作为首次写入（不带 **`If-Match`**）。
+3. **观测**：**`LastStateEtagPrefetchRan`**。
+4. **里程碑**：排练路径更贴近「先读服务器版本再写」；**权威仍在 persist_sync**。
+
+#### 本次续写（2026-04-21 · D19 续十九）— 进游戏测试准备
+
+1. **`DebugHudSimple`**：若本次 **F2** 流程曾执行 **D18** 预取成功，HUD 追加 **`etg:pre`**（与 **`syn:`** 同区）。
+2. **`docs/getting-started.md`**：新增 **「进游戏验收（最小清单）」**（单机 + **`npm run persist`** + **F2** + 三件套排练 + 原则说明）。
+3. **范围说明**：**Redis**、**Unity 端 `apply-patch`** 等仍为 **【未】**，**不阻塞**你在 **SampleScene** 做玩法与 **D5** 联调测试。
+
+#### 本次续写（2026-04-21 · D20 续二十）— 玩测性能与同步可读性
+
+1. **`DebugHudSimple`**：**`E:`** 敌人数量、近身 **`[燃烧/冰冻…]`** 读数改为 **~3Hz 刷新**，避免每帧 **`FindObjectsOfType`** 拖帧。
+2. **`ClassifySyncPostStatus`**：传输失败（**HTTP≤0**）时 **`syn:net`**（通用）、**`syn:refused`**（本机常见拒绝）、**`syn:timeout`**（超时），便于区分「未 **`npm run persist`**」与业务码。
+3. **里程碑**：纯客户端与观测；**不改**服权威。
+
+#### 本次续写（2026-04-21 · D21 续二一）— 玩测帧率（HUD + 敌人遍历）
+
+1. **`DebugHudSimple`**：复用 **`StringBuilder`**（**`Clear`**），降低每帧 GC 压力。
+2. **`EnemyStatusEffectsSimple`**：**`OnEnable`/`OnDisable`** 维护 **`s_HudInstances`**；**`HudLivingApproxCount`**、**`FindNearestForHud`** 供 HUD 使用，**不再**周期性 **`FindObjectsOfType<EnemyStatusEffectsSimple>`** / **`FindObjectsOfType<GameObject>`**。
+3. **`EnemyChaseSimple`**：**`Update`** 内每帧 **`GetComponent<EnemyStatusEffectsSimple>()`** 改为 **`Start`** 缓存 + 惰性补全。
+4. **`EnemyStatusEffectsSimple.TickBurn`**：缓存 **`EnemyHealthSimple`**，避免 DOT 节拍上重复 **`GetComponent`**。
+5. **里程碑**：纯手感/表现；**未更近**服务端可信（与 **`.cursorrules` §5.1** 一致）。
 
 #### 本次续写（2026-04-19 · 会话收尾）— Git 与文件状态
 
@@ -637,7 +668,7 @@
 - **主要脚本（均在 `Assets/`）：** `PlayerMoveSimple`、`PlayerAttackSimple`、`PlayerPickupSimple`、`MonsterCombatHost`、`MonsterChaseHost`、`MonsterP1A1Mark`、`P1A1QuestState`（含 **`P1AContentConfig`** 类型）、`P1A1WildSpawner`、`WaveSpawnerSimple`、`P1MiniBossSimple`、`P1BossPhaseSimple`、`P1MiniBossSceneBootstrap`、`DropItemSimple`、`DebugHudSimple`、`PlayerProgressSimple`、`PlayerInventorySimple`、`PlayerBankSimple`、`PlayerSaveSimple`、`PlayerStateExportSimple`（partial：`Export` / `Network` / **`Input`** / **`SyncResponseParse`**）、`ServerAuditLogSimple`、`PlayerAreaStateSimple`、`SafeZoneSimple`、`AreaPortalSimple`、`WorldZoneConfigSimple`、`PartyPlaceholderSimple`、`ChatPlaceholderSimple`；**Editor**：`EpochOfDawnBuildP1A5`（P1-A-5 一键 Windows 构建）（名称以工程为准）
 
 **续接口令（复制即可）：**  
-`继续《破晓纪元》开发。已读 d:\mygame\README.MD 里「新对话续接」与「今日开发日志」。当前状态：D4 Flow:OK；P1-A 完成；P2-D5 完成；**P3** **SrvVal_*** + **P3-2**；**persist_sync** **durationMs/httpStatus** + **`replayObservation`** + **可选 `SYNC_ISSUED_AT_MAX_SKEW_SEC`** + **`/rehearsal/patch-strategy`** + **`POST /rehearsal/validate-patch`** + **`POST /rehearsal/apply-patch`**（**`REHEARSAL_PATCH_WRITE=1`**）+ **`GET /state`/`POST /sync`/`apply-patch` 的 ETag/If-Match（D16）** + **Unity `PlayerStateExportSimple` `syncUseIfMatch` + `If-Match`（D17）** + **`GET /rehearsal/etag-concurrency`** + **可选 `SYNC_ETAG_DISABLED`** + **`/rehearsal/audit-state-strict`** + **`/rehearsal/compliance-bundle`** + **`/rehearsal/warning-srvval-bridge`** + **`/rehearsal/idempotency-persist`** + **可选 `SYNC_WARNING_SRVVAL_BRIDGE`** / **`WARNING_CODE_TO_SRVVAL_JSON`** + **可选 `SYNC_AUDIT_STATE_STRICT`** + **可选 `SYNC_IDEMPOTENCY_PERSIST`** + **可选 `LOG_REDACT_PII`**；**`npm run check-schema-version`** / **`check-schema-snapshot`** / **`validate-patch-rehearsal`** / **`audit-export-bundle`** / **`metrics-archive`**；**Grafana** **`EpochOfDawn/server/examples/grafana-persist-sync-minimal.json`**；**10×20** **`EpochOfDawn/docs/p3-d5-waves-10x20.md`**；**GitHub Actions** **`d5-validate.yml`**；**F2** **`tot:`** **`syn:`** **`d:ms`** **`r:`** + **`;`** **`AudC:`**；**Unity EditMode** **`AuditSummaryHudPreviewTests`**；**`p3-d5-roadmap-200.md`**；D5 F12/F4/F3/F2/F1。你改 EpochOfDawn/Assets 脚本。`
+`继续《破晓纪元》开发。已读 d:\mygame\README.MD 里「新对话续接」与「今日开发日志」。当前状态：D4 Flow:OK；P1-A 完成；P2-D5 完成；**P3** **SrvVal_*** + **P3-2**；**persist_sync** **durationMs/httpStatus** + **`replayObservation`** + **可选 `SYNC_ISSUED_AT_MAX_SKEW_SEC`** + **`/rehearsal/patch-strategy`** + **`POST /rehearsal/validate-patch`** + **`POST /rehearsal/apply-patch`**（**`REHEARSAL_PATCH_WRITE=1`**）+ **`GET /state`/`POST /sync`/`apply-patch` 的 ETag/If-Match（D16）** + **Unity `PlayerStateExportSimple` `syncUseIfMatch` + `If-Match`（D17）** + **`syncPrefetchStateEtag` + `GET /state`（D18）** + **`GET /rehearsal/etag-concurrency`** + **可选 `SYNC_ETAG_DISABLED`** + **`/rehearsal/audit-state-strict`** + **`/rehearsal/compliance-bundle`** + **`/rehearsal/warning-srvval-bridge`** + **`/rehearsal/idempotency-persist`** + **可选 `SYNC_WARNING_SRVVAL_BRIDGE`** / **`WARNING_CODE_TO_SRVVAL_JSON`** + **可选 `SYNC_AUDIT_STATE_STRICT`** + **可选 `SYNC_IDEMPOTENCY_PERSIST`** + **可选 `LOG_REDACT_PII`**；**`npm run check-schema-version`** / **`check-schema-snapshot`** / **`validate-patch-rehearsal`** / **`audit-export-bundle`** / **`metrics-archive`**；**Grafana** **`EpochOfDawn/server/examples/grafana-persist-sync-minimal.json`**；**10×20** **`EpochOfDawn/docs/p3-d5-waves-10x20.md`**；**GitHub Actions** **`d5-validate.yml`**；**F2** **`tot:`** **`syn:`** **`etg:pre`（D19）** **`d:ms`** **`r:`** + **`;`** **`AudC:`**；**`getting-started` 进游戏验收清单**；**Unity EditMode** **`AuditSummaryHudPreviewTests`**；**`p3-d5-roadmap-200.md`**；D5 F12/F4/F3/F2/F1。你改 EpochOfDawn/Assets 脚本。`
 
 ---
 

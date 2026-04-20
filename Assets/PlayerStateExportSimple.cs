@@ -17,6 +17,9 @@ public partial class PlayerStateExportSimple : MonoBehaviour
     [Tooltip("D17：与 persist_sync D16 对齐，若本地存有上次 ETag 则在 POST /sync 带 If-Match；关闭则从不发送（旧服调试）。")]
     public bool syncUseIfMatch = true;
 
+    [Tooltip("D18：本地无 ETag 时，POST /sync 前先 GET /state 取 ETag 写入 PlayerPrefs，减少首包或清缓存后与服务器存档不一致。")]
+    public bool syncPrefetchStateEtag = true;
+
     public bool networkSyncEnabled = true;
 
     public int LastHttpCode;
@@ -53,6 +56,9 @@ public partial class PlayerStateExportSimple : MonoBehaviour
 
     /// <summary>D17：本次 POST 是否已带 <c>If-Match</c>（仅观测）。</summary>
     public bool LastIfMatchWasSent;
+
+    /// <summary>D18：本次 F2 流程是否在 POST 前执行了 <c>GET /state</c> 预取 ETag（仅观测）。</summary>
+    public bool LastStateEtagPrefetchRan;
 
     public PlayerProgressSimple progress;
     public PlayerWalletSimple wallet;

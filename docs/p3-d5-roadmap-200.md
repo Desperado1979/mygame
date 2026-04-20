@@ -163,7 +163,7 @@
 13. 【已】灰度占位：**`SYNC_REQUIRE_STAGING_HEADER`** → 需 **`X-Sync-Staging: 1`**
 14. 【已】维护模式：**`MAINTENANCE_MODE`** → **503**
 15. 【已】**`state.version` vs `schemaVersion`**：**`audit_validate`** **`state_version_vs_schema_mismatch`**（**low**）；硬协商仍 **【未】**
-16. 【已】PATCH 策略草案（**`GET /rehearsal/patch-strategy`**）；**`POST /rehearsal/validate-patch`**；**`REHEARSAL_PATCH_WRITE` + `POST /rehearsal/apply-patch`**（**`state`** 排练写盘）；**`ETag`/`If-Match`（D16，`GET /rehearsal/etag-concurrency`）**；Unity **`POST /sync` `If-Match`（D17，`PlayerStateExportSimple`）**；**生产 PATCH** 仍 **【未】**
+16. 【已】PATCH 策略草案（**`GET /rehearsal/patch-strategy`**）；**`POST /rehearsal/validate-patch`**；**`REHEARSAL_PATCH_WRITE` + `POST /rehearsal/apply-patch`**（**`state`** 排练写盘）；**`ETag`/`If-Match`（D16，`GET /rehearsal/etag-concurrency`）**；Unity **`POST /sync` `If-Match`（D17）** + **`GET /state` 预取 ETag（D18）**；**生产 PATCH** 仍 **【未】**
 17. 【已】**`warningsByCode` → `SrvVal_*`**：**`SYNC_WARNING_SRVVAL_BRIDGE`** / **`WARNING_CODE_TO_SRVVAL_JSON`** → **`auditSummary.srvValFromWarnings`**（观测）；与 **`audit[]`** 真 **`SrvVal_*`** 深度合并策略仍 **【未】**
 18. 【已】**`metrics_archive_lines.cjs`**（按日追加 **`data/metrics-archive/`**）；**冷热分层/压缩** 仍 **【未】**
 19. 【已】**`audit_export_bundle.cjs`** + **`manifest.json`**（S3 式 **sha256** 分片）；真桶 ACL/生命周期仍 **【未】**
@@ -207,7 +207,7 @@
 11. 【未】F12 导出文件对比工具 GUI
 12. 【已】**`merge_metrics_ndjson.cjs`** + **`npm run merge-metrics-ndjson`**
 13. 【已】**`npm run metrics-archive`**（追加归档副本）；**压缩** 仍 **【未】**
-14. 【已】**EditMode** **`AuditSummaryHudPreviewTests`**（**`AuditSummaryHudPreviewFromJson`**）；全覆盖仍 **【未】**
+14. 【已】**Editor 菜单自检** **`AuditSummaryHudPreviewSelfTest`**（**`AuditSummaryHudPreviewFromJson`**）；全覆盖仍 **【未】**
 15. 【已】**`.env.example`** + **`npm run check-schema-version`**（Schema 与 **`ClientSyncRequestSchemaVersion`** 对齐）
 16. 【未】LFS 资源与审计无关项剥离
 17. 【未】符号服务器（崩溃）

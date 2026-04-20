@@ -37,6 +37,15 @@ public class DebugHudSimple : MonoBehaviour
     [Header("Week1 split: runtime vs debug")]
     public bool showDebugDetails = true;
 
+    /** 玩测：避免每帧全场景遍历；约 3Hz 刷新 E: 计数。 */
+    const float HudEnemyCountInterval = 0.33f;
+    float _hudEnemyCountNextAt;
+    int _hudEnemyCountCache;
+    const float HudNearEnemyStatusInterval = 0.28f;
+    float _hudNearEnemyNextAt;
+    EnemyStatusEffectsSimple _hudNearEnemyCache;
+    readonly StringBuilder _hudLine = new StringBuilder(512);
+
     void Start()
     {
         if (player != null)
@@ -64,14 +73,10 @@ public class DebugHudSimple : MonoBehaviour
         if (hudText == null) return;
         EnsureWaveSpawnerRef();
 
-        int enemyCount = 0;
-        GameObject[] allObjects = FindObjectsOfType<GameObject>();
-        for (int i = 0; i < allObjects.Length; i++)
+        if (Time.unscaledTime >= _hudEnemyCountNextAt)
         {
-            GameObject obj = allObjects[i];
-            if (!obj.activeInHierarchy) continue;
-            if (obj.CompareTag("Enemy") || obj.name.Contains("Enemy"))
-                enemyCount++;
+            _hudEnemyCountNextAt = Time.unscaledTime + HudEnemyCountInterval;
+            _hudEnemyCountCache = EnemyStatusEffectsSimple.HudLivingApproxCount;
         }
 
         string pos = player == null ? "N/A" : $"{player.position.x:F1},{player.position.z:F1}";
@@ -79,10 +84,11 @@ public class DebugHudSimple : MonoBehaviour
             ? ""
             : (d4Flow.Completed ? "Flow:OK" : $"Flow:S{d4Flow.CurrentStep}");
 
-        var line = new StringBuilder(512);
+        StringBuilder line = _hudLine;
+        line.Clear();
         if (flow.Length > 0)
             line.Append($"{flow}  ");
-        line.Append($"E:{enemyCount}  P:{pos}");
+        line.Append($"E:{_hudEnemyCountCache}  P:{pos}");
 
         if (mp != null) line.Append($"  MP:{mp.CurrentMpRounded}/{mp.MaxMp}");
         if (health != null) line.Append($"  HP:{health.CurrentHp}/{health.maxHp}");
@@ -126,8 +132,12 @@ public class DebugHudSimple : MonoBehaviour
 
         if (showDebugDetails && player != null)
         {
-            EnemyStatusEffectsSimple near = FindNearestEnemyStatus(player.position, 18f);
-            string st = near == null ? "" : near.GetHudSummary();
+            if (Time.unscaledTime >= _hudNearEnemyNextAt)
+            {
+                _hudNearEnemyNextAt = Time.unscaledTime + HudNearEnemyStatusInterval;
+                _hudNearEnemyCache = EnemyStatusEffectsSimple.FindNearestForHud(player.position, 18f);
+            }
+            string st = _hudNearEnemyCache == null ? "" : _hudNearEnemyCache.GetHudSummary();
             if (st.Length > 0) line.Append($"  [{st}]");
         }
 
@@ -186,6 +196,8 @@ public class DebugHudSimple : MonoBehaviour
                 line.Append($" AudC:{stateExport.LastMetricsAuditCategoriesPreview}");
             if (!string.IsNullOrEmpty(stateExport.LastSyncPostStatusTag))
                 line.Append($" syn:{stateExport.LastSyncPostStatusTag}");
+            if (stateExport.LastStateEtagPrefetchRan)
+                line.Append(" etg:pre");
             if (stateExport.LastSyncDurationMs >= 0)
                 line.Append($" d:{stateExport.LastSyncDurationMs}ms");
             if (stateExport.LastSyncRetryCount > 0)
@@ -195,24 +207,5 @@ public class DebugHudSimple : MonoBehaviour
         if (showDebugDetails && health != null) line.Append("  死亡掉金并复活");
 
         hudText.text = line.ToString();
-    }
-
-    static EnemyStatusEffectsSimple FindNearestEnemyStatus(Vector3 from, float maxDist)
-    {
-        EnemyStatusEffectsSimple[] all = FindObjectsOfType<EnemyStatusEffectsSimple>();
-        EnemyStatusEffectsSimple best = null;
-        float bestSq = maxDist * maxDist;
-        for (int i = 0; i < all.Length; i++)
-        {
-            if (all[i] == null || !all[i].gameObject.activeInHierarchy) continue;
-            float sq = (all[i].transform.position - from).sqrMagnitude;
-            if (sq < bestSq)
-            {
-                bestSq = sq;
-                best = all[i];
-            }
-        }
-
-        return best;
     }
 }

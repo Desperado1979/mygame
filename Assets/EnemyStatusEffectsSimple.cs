@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>D2-2: Burn (DOT) + Freeze (root placeholder, no DOT) — aligned with README §11.1.</summary>
@@ -18,9 +19,14 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
     bool cachedColor;
 
     Rigidbody body;
+    EnemyHealthSimple _health;
+
+    /// <summary>HUD：存活且启用的敌人实例（无全场景 FindObjectsOfType）。</summary>
+    static readonly List<EnemyStatusEffectsSimple> s_HudInstances = new List<EnemyStatusEffectsSimple>();
 
     void Awake()
     {
+        _health = GetComponent<EnemyHealthSimple>();
         body = GetComponent<Rigidbody>();
         meshRenderer = GetComponentInChildren<MeshRenderer>();
         if (meshRenderer != null && meshRenderer.material != null)
@@ -28,6 +34,41 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
             originalColor = meshRenderer.material.color;
             cachedColor = true;
         }
+    }
+
+    void OnEnable()
+    {
+        s_HudInstances.Add(this);
+    }
+
+    void OnDisable()
+    {
+        s_HudInstances.Remove(this);
+    }
+
+    public static int HudLivingApproxCount => s_HudInstances.Count;
+
+    /// <summary>玩测 HUD：最近敌人状态条；遍历登记列表而非 FindObjectsOfType。</summary>
+    public static EnemyStatusEffectsSimple FindNearestForHud(Vector3 from, float maxDist)
+    {
+        float maxSq = maxDist * maxDist;
+        EnemyStatusEffectsSimple best = null;
+        float bestSq = maxSq;
+        List<EnemyStatusEffectsSimple> list = s_HudInstances;
+        for (int i = 0; i < list.Count; i++)
+        {
+            EnemyStatusEffectsSimple e = list[i];
+            if (e == null || !e.gameObject.activeInHierarchy)
+                continue;
+            float sq = (e.transform.position - from).sqrMagnitude;
+            if (sq < bestSq)
+            {
+                bestSq = sq;
+                best = e;
+            }
+        }
+
+        return best;
     }
 
     void Update()
@@ -46,9 +87,8 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
         if (t < nextBurnTickTime)
             return;
 
-        EnemyHealthSimple health = GetComponent<EnemyHealthSimple>();
-        if (health != null)
-            health.TakeHit(burnDamagePerTick);
+        if (_health != null)
+            _health.TakeHit(burnDamagePerTick);
 
         nextBurnTickTime = t + burnTickInterval;
     }

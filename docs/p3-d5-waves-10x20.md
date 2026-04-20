@@ -57,7 +57,7 @@
 5. **`tools/check_schema_files_snapshot.cjs`** + **`schema_files_snapshot.json`**。
 6. **`npm run check-schema-snapshot`**、**`audit-export-bundle`**、**`check-locale-ci`**。
 7. **CI**：**`d5-validate.yml`** 增加上述步骤。
-8. **Unity**：**`AuditSummaryHudPreviewFromJson`** + **EditMode** **`AuditSummaryHudPreviewTests`**。
+8. **Unity**：**`AuditSummaryHudPreviewFromJson`** + 菜单 **`EpochOfDawn/Tests/Run Audit HUD Preview Self-Test`**。
 9. **`.env.example`**：D10 变量。
 10. **`README`**「D10 续十」、**`getting-started`**、**`roadmap`** 更新。
 11. **`GET /health`** 合规相关字段。
@@ -144,7 +144,7 @@
 7. **里程碑**：排练写 **`state`**。
 8. **ETag** → **D16** **【已】**。
 9. **`.env.example`**。
-10. **Unity** **`POST /sync` `If-Match`** → **D17** **【已】**；**`apply-patch`** / **`GET /state` 预取** 仍 **【未】**。
+10. **Unity** **`POST /sync` `If-Match`** → **D17** **【已】**；**`GET /state` 预取 ETag** → **D18** **【已】**；**`apply-patch`** 客户端仍 **【未】**。
 
 ---
 
@@ -167,4 +167,38 @@
 2. **`PlayerPrefs`** **`EOD_SYNC_ETAG_*`** + **`If-Match`** on **`POST /sync`**。
 3. **412** → **`syn:precond`**。
 4. **验收**：**`README`**「D17 续十七」。
-5. **`GET /state` 预取** 仍 **【未】**。
+5. **`GET /state` 预取** → **D18** **【已】**。
+
+---
+
+## 续波 18（D18 续十八 · ~4 步）— 已落地
+
+1. **`syncPrefetchStateEtag`**（默认 **true**）。
+2. **无本地 ETag** → **`GET /state?playerId=`** → **`SaveSavedEtag`**。
+3. **`LastStateEtagPrefetchRan`**。
+4. **验收**：**`README`**「D18 续十八」。
+
+---
+
+## 续波 19（D19 续十九 · ~3 步）— 已落地
+
+1. **HUD `etg:pre`**（D18 预取成功后可读）。
+2. **`getting-started`**：**「进游戏验收（最小清单）」**。
+3. **验收**：**`README`**「D19 续十九」。
+
+---
+
+## 续波 20（D20 续二十 · ~3 步）— 已落地
+
+1. **`DebugHudSimple`**：**E:** / 近身状态 **节流**（~3Hz）。
+2. **`syn:net` / `refused` / `timeout`**（`ClassifySyncPostStatus`）。
+3. **验收**：**`README`**「D20 续二十」。
+
+---
+
+## 续波 21（D21 续二一 · ~4 步）— 已落地
+
+1. **`DebugHudSimple`**：**`StringBuilder`** 复用。
+2. **`EnemyStatusEffectsSimple`**：**`s_HudInstances`** + **`HudLivingApproxCount`** / **`FindNearestForHud`**。
+3. **`EnemyChaseSimple`** / **`TickBurn`**：**`GetComponent`** 缓存。
+4. **验收**：**`README`**「D21 续二一」。

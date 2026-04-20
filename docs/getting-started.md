@@ -83,7 +83,7 @@
 
 **D9（续九）补充**：**`POST /sync` 200** 可含 **`replayObservation`**（审计尾与 **`state`** 是否对齐）；**`GET /rehearsal/patch-strategy`** 为 PATCH 路线草案；**`npm run check-schema-version`**；**`npm run metrics-archive [天数]`** 将旧行追加到 **`data/metrics-archive/`**。详见 **`README.MD`**「本次续写 · D9 续九」。
 
-**D10（续十）补充**：**`GET /rehearsal/compliance-bundle`**（留存/PII/S3 导出**说明**）；**`LOG_REDACT_PII`**；**`npm run check-schema-snapshot`**（**`schemas/*.schema.json`** 与快照 **`tools/schema_files_snapshot.json`**）；**`npm run audit-export-bundle`**（**`data/audit-export/export-*/manifest.json`**）；Unity **Window → General → Test Runner** 跑 **`EpochOfDawn.Tests.EditMode`**。详见 **`README.MD`**「本次续写 · D10 续十」。
+**D10（续十）补充**：**`GET /rehearsal/compliance-bundle`**（留存/PII/S3 导出**说明**）；**`LOG_REDACT_PII`**；**`npm run check-schema-snapshot`**（**`schemas/*.schema.json`** 与快照 **`tools/schema_files_snapshot.json`**）；**`npm run audit-export-bundle`**（**`data/audit-export/export-*/manifest.json`**）；Unity 菜单 **`EpochOfDawn → Tests → Run Audit HUD Preview Self-Test`**（**`Assets/Editor/AuditSummaryHudPreviewSelfTest.cs`**）。详见 **`README.MD`**「本次续写 · D10 续十」。
 
 **D11（续十一）补充**：**`SYNC_WARNING_SRVVAL_BRIDGE=1`** 或 **`WARNING_CODE_TO_SRVVAL_JSON`** → 响应 **`auditSummary.srvValFromWarnings`**；**`GET /rehearsal/warning-srvval-bridge`**；Grafana 见 **`EpochOfDawn/server/examples/grafana-persist-sync-minimal.json`**。详见 **`README.MD`**「本次续写 · D11 续十一」。
 
@@ -99,17 +99,28 @@
 
 **D17（续十七）补充**：**`PlayerStateExportSimple`**：**`syncUseIfMatch`**（默认 **true**）时按 **`playerId`** 用 **`PlayerPrefs`** 记忆 **`ETag`** 并在 **`POST /sync`** 发送 **`If-Match`**；**412** → HUD **`syn:precond`**。详见 **`README.MD`**「本次续写 · D17 续十七」。
 
+**D18（续十八）补充**：**`syncPrefetchStateEtag`**（默认 **true**）：本地尚无 ETag 时，**F2** 在 **`POST /sync`** 前先 **`GET /state?playerId=`** 取响应头 **`ETag`** 写入 **`PlayerPrefs`**。**`LastStateEtagPrefetchRan`** 观测。详见 **`README.MD`**「本次续写 · D18 续十八」。
+
 **Docker**：在 **`EpochOfDawn/server/`** 执行 **`docker compose up`**（映射 **8787**）。**NDJSON**：**`npm run merge-metrics-ndjson -- data/metrics.ndjson`** 或管道排序。**k6**（可选）：**`k6 run examples/k6-smoke.js`**。
 
 **SLO 摘要**：**`GET /metrics/sync-summary?days=7`**；CLI：**`npm run sync-summary`**。**Mock 响应**：**`GET /rehearsal/mock-sync-200`**。**审计重放**：**`npm run audit-replay -- examples/request_payload_example.json`**。**环境变量模板**：**`EpochOfDawn/server/.env.example`**。
 
-**Unity HUD**：**F2 POST** 后若有 **`PlayerStateExportSimple`**，可显示 **`syn:`**（如 **`syn:ok`**、**`syn:maint`**、**`syn:time`**），与 **`tot:`** 独立；若服务端返回 **`X-Sync-Duration-Ms`**，可显示 **`d:Nms`**；若 **429** 后重试，可显示 **`r:`**（重试次数）。
+**Unity HUD**：**F2 POST** 后若有 **`PlayerStateExportSimple`**，可显示 **`syn:`**（如 **`syn:ok`**、**`syn:maint`**、**`syn:time`**、**`syn:precond`**、**`syn:net`** / **`refused`** / **`timeout`**），与 **`tot:`** 独立；**D18** 预取成功时可显示 **`etg:pre`**；若服务端返回 **`X-Sync-Duration-Ms`**，可显示 **`d:Nms`**；若 **429** 后重试，可显示 **`r:`**（重试次数）。
 
 **延迟与 SLO**：**`GET /metrics/sync-summary`** 的 **`latencyMs`**（**p50/p90/p99**）；**Prometheus** 路径亦含 **`persist_sync_post_duration_*`**（有 **`durationMs`** 样本时）。**滚动计划（10×20）**：**`EpochOfDawn/docs/p3-d5-waves-10x20.md`**。
 
 **HUD 缩写补充（与 `PlayerStateExportSimple.SyncResponseParse` 一致）**：除 **`SV/Inv/Pk/…/St`** 外，另有 **`Zo`**（`SrvVal_ZoneReject`）、**`Pt`**（`SrvVal_PortalReject`）、**`Sa`**（`SrvVal_StateReject`）、**`Ch`**（`SrvVal_ChatReject`）等，均来自服务端返回的 **`auditSummary.byCategory`** 键名。
 
 **扩展清单（10 组 ×20 条）**：见 **`EpochOfDawn/docs/p3-d5-roadmap-200.md`**（【已】/【未】分波落地用）。
+
+## 进游戏验收（最小清单 · 开测前可过一遍）
+
+1. **Unity**：打开 **`SampleScene`**，能 **WASD**，左上角 **HUD** 有 **Flow / P1 / Wv**（按场景挂载而定）。
+2. **单机环**：按 **`P1A1QuestState` / `WaveSpawnerSimple`** 配置推进至 **P1:OK**、**Wv:Done** 或你认可的停损点。
+3. **persist_sync（推荐）**：终端 **`cd EpochOfDawn/server`** → **`npm run persist`**；进游戏 **F2** → HUD **`syn:ok`**（或 **`syn:time`** / **`syn:precond`** 等，以服配置为准）；**`server/data/<playerId>.json`** 生成即表示写盘链通。
+4. **ETag（D17/D18）**：本地**无** ETag 缓存时 **F2** 可先 **`GET /state`**，HUD 可出现 **`etg:pre`**；**`syn:precond`** 表示与服务器存档冲突，需再 **F2** 或排查。
+5. **三件套排练**：**F12** 状态、**F4** 审计、**F3** 整包导出路径可用（见上文 **D5 排练**）。
+6. **原则**：战斗数值仍以 **`.cursorrules`** 流水线为准；**服务端权威**以 **`persist_sync`** 校验为准（本清单不替代服务端）。
 
 ## P1-A 数据驱动（推荐）
 

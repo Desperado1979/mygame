@@ -14,6 +14,8 @@ public class PlayerHealthSimple : MonoBehaviour
 
     public int CurrentHp => currentHp;
     public bool IsDead => currentHp <= 0;
+    /// <summary>头顶血条填充 0~1。</summary>
+    public float HpFill01 => maxHp <= 0 ? 0f : Mathf.Clamp01((float)currentHp / maxHp);
 
     PlayerEnhanceSimple enhance;
     bool respawning;
@@ -31,6 +33,25 @@ public class PlayerHealthSimple : MonoBehaviour
         enhance = GetComponent<PlayerEnhanceSimple>();
         if (GetComponent<P1A1QuestState>() == null)
             gameObject.AddComponent<P1A1QuestState>();
+    }
+
+    void Start()
+    {
+        EnsureFloatingBars();
+    }
+
+    void OnEnable()
+    {
+        EnsureFloatingBars();
+    }
+
+    void EnsureFloatingBars()
+    {
+        // 无论 Instance 如何，当前玩家对象都兜底确保头顶条存在。
+        if (GetComponent<PlayerFloatingBarsSimple>() == null)
+        {
+            gameObject.AddComponent<PlayerFloatingBarsSimple>();
+        }
     }
 
     void OnDestroy()

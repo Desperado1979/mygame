@@ -16,7 +16,7 @@ public class PlayerMoveSimple : MonoBehaviour
         float h = Input.GetAxisRaw("Horizontal"); // A D
         float v = Input.GetAxisRaw("Vertical");   // W S
 
-        Vector3 dir = new Vector3(h, 0f, v).normalized;
+        Vector3 dir = BuildCameraRelativeDir(h, v);
         TryStartDash(dir);
 
         bool isDashing = Time.time < dashEndTime;
@@ -27,6 +27,23 @@ public class PlayerMoveSimple : MonoBehaviour
         {
             transform.forward = dir;
         }
+    }
+
+    Vector3 BuildCameraRelativeDir(float h, float v)
+    {
+        Camera cam = Camera.main;
+        if (cam == null)
+            return new Vector3(h, 0f, v).normalized;
+
+        Vector3 camForward = cam.transform.forward;
+        camForward.y = 0f;
+        camForward = camForward.sqrMagnitude > 1e-6f ? camForward.normalized : Vector3.forward;
+
+        Vector3 camRight = cam.transform.right;
+        camRight.y = 0f;
+        camRight = camRight.sqrMagnitude > 1e-6f ? camRight.normalized : Vector3.right;
+
+        return (camRight * h + camForward * v).normalized;
     }
 
     void TryStartDash(Vector3 dir)

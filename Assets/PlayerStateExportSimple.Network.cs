@@ -41,6 +41,33 @@ public partial class PlayerStateExportSimple
         PlayerPrefs.Save();
     }
 
+    /// <summary>D18：本地尚无 ETag 时 GET /state，把响应头 ETag 写入 PlayerPrefs（与 persist_sync D16 一致）。</summary>
+    IEnumerator PrefetchStateEtagBeforePostIfNeeded(string playerId)
+    {
+        LastStateEtagPrefetchRan = false;
+        if (!syncPrefetchStateEtag || !syncUseIfMatch || string.IsNullOrEmpty(playerId))
+            yield break;
+        if (!string.IsNullOrEmpty(LoadSavedEtag(playerId)))
+            yield break;
+
+        string root = ResolveBaseUrl().TrimEnd('/');
+        string url = root + "/state?playerId=" + UnityWebRequest.EscapeURL(playerId);
+        using (UnityWebRequest req = UnityWebRequest.Get(url))
+        {
+            yield return req.SendWebRequest();
+            if ((int)req.responseCode != 200)
+                yield break;
+            string eh = req.GetResponseHeader("ETag");
+            if (string.IsNullOrEmpty(eh)) eh = req.GetResponseHeader("etag");
+            string norm = NormalizeEtagHeader(eh);
+            if (string.IsNullOrEmpty(norm))
+                yield break;
+            SaveSavedEtag(playerId, norm);
+            LastServerETag = norm;
+            LastStateEtagPrefetchRan = true;
+        }
+    }
+
     public IEnumerator PostSyncRoutine()
     {
         if (!networkSyncEnabled)
@@ -53,6 +80,8 @@ public partial class PlayerStateExportSimple
         byte[] raw = Encoding.UTF8.GetBytes(json);
         LastSyncRetryCount = 0;
         string pidForEtag = body != null && !string.IsNullOrEmpty(body.playerId) ? body.playerId : playerId;
+
+        yield return PrefetchStateEtagBeforePostIfNeeded(pidForEtag);
 
         for (int attempt = 1; attempt <= MaxSyncPostAttempts; attempt++)
         {
@@ -79,7 +108,7 @@ public partial class PlayerStateExportSimple
                 LastPostResponseFull = text;
                 LastPostResponsePreview = Truncate(text, 400);
                 LastSyncError = req.result != UnityWebRequest.Result.Success ? req.error : "";
-                LastSyncPostStatusTag = ClassifySyncPostStatus(LastHttpCode, text);
+                LastSyncPostStatusTag = ClassifySyncPostStatus(LastHttpCode, text, LastSyncError);
                 string durHdr = req.GetResponseHeader("X-Sync-Duration-Ms");
                 LastSyncDurationMs = int.TryParse(durHdr, out int dms) ? dms : -1;
 
@@ -191,9 +220,17 @@ public partial class PlayerStateExportSimple
         return string.IsNullOrWhiteSpace(syncBaseUrl) ? "http://127.0.0.1:8787" : syncBaseUrl.Trim();
     }
 
-    static string ClassifySyncPostStatus(int httpCode, string body)
+    static string ClassifySyncPostStatus(int httpCode, string body, string transportErr)
     {
         if (httpCode >= 200 && httpCode < 300) return "ok";
+        if (httpCode <= 0)
+        {
+            string e = transportErr ?? "";
+            if (e.IndexOf("refused", StringComparison.OrdinalIgnoreCase) >= 0) return "refused";
+            if (e.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0) return "timeout";
+            if (e.IndexOf("Timeout", StringComparison.OrdinalIgnoreCase) >= 0) return "timeout";
+            return "net";
+        }
         switch (httpCode)
         {
             case 429: return "ratelimit";
