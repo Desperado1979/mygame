@@ -14,10 +14,12 @@ public class P1A1WildSpawner : MonoBehaviour
     {
         if (contentConfig == null)
             contentConfig = P1AContentConfig.TryLoadDefault();
+        float y = 0.5f;
         if (contentConfig != null)
         {
             count = Mathf.Max(1, contentConfig.wildEnemyCount);
             ringRadius = contentConfig.wildRingRadius;
+            y = contentConfig.enemySpawnHeightY;
         }
 
         if (enemyPrefab == null || count <= 0)
@@ -26,7 +28,7 @@ public class P1A1WildSpawner : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             float ang = (i / (float)count) * Mathf.PI * 2f;
-            Vector3 p = transform.position + new Vector3(Mathf.Cos(ang) * ringRadius, 0.5f, Mathf.Sin(ang) * ringRadius);
+            Vector3 p = transform.position + new Vector3(Mathf.Cos(ang) * ringRadius, y, Mathf.Sin(ang) * ringRadius);
             Instantiate(enemyPrefab, p, Quaternion.identity);
         }
     }

@@ -1,6 +1,8 @@
+using Unity.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
-public class DropItemSimple : MonoBehaviour
+public class DropItemSimple : NetworkBehaviour
 {
     public float rotateSpeed = 90f;
     [Tooltip("D3: 拾取时计入背包负重")]
@@ -25,24 +27,83 @@ public class DropItemSimple : MonoBehaviour
     public bool enableMagnet = false;
     public float magnetRange = 3f;
     public float magnetSpeed = 7f;
+    readonly NetworkVariable<FixedString64Bytes> netPickupId = new(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    readonly NetworkVariable<int> netPickupCount = new(
+        1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    readonly NetworkVariable<float> netPickupWeight = new(
+        1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
     float destroyAtTime;
     MeshRenderer meshRenderer;
     Color baseColor = Color.white;
     TextMesh labelMesh;
 
+    public override void OnNetworkSpawn()
+    {
+        netPickupId.OnValueChanged += OnSyncedPickupId;
+        netPickupCount.OnValueChanged += OnSyncedPickupCount;
+        netPickupWeight.OnValueChanged += OnSyncedPickupWeight;
+
+        if (IsServer)
+        {
+            netPickupId.Value = new FixedString64Bytes(GameItemIdsSimple.Normalize(pickupId));
+            netPickupCount.Value = Mathf.Max(1, pickupCount);
+            netPickupWeight.Value = Mathf.Max(0.01f, pickupWeight);
+        }
+
+        ApplySyncedDropData();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        netPickupId.OnValueChanged -= OnSyncedPickupId;
+        netPickupCount.OnValueChanged -= OnSyncedPickupCount;
+        netPickupWeight.OnValueChanged -= OnSyncedPickupWeight;
+    }
+
+    void OnSyncedPickupId(FixedString64Bytes previous, FixedString64Bytes current) => ApplySyncedDropData();
+    void OnSyncedPickupCount(int previous, int current) => ApplySyncedDropData();
+    void OnSyncedPickupWeight(float previous, float current) => ApplySyncedDropData();
+
+    void ApplySyncedDropData()
+    {
+        if (!IsSpawned)
+            return;
+        pickupId = GameItemIdsSimple.Normalize(netPickupId.Value.ToString());
+        pickupCount = Mathf.Max(1, netPickupCount.Value);
+        pickupWeight = Mathf.Max(0.01f, netPickupWeight.Value);
+        UpdateLabelText();
+    }
+
     void Update()
     {
+        if (IsSpawned)
+        {
+            if (!IsServer)
+            {
+                ApplyTypeColor();
+                UpdateLabel();
+                transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
+                return;
+            }
+        }
+
         ApplyTypeColor();
         UpdateLabel();
         UpdateMagnet();
         transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
-        if (Time.time >= destroyAtTime)
+        if (Time.time < destroyAtTime)
+            return;
+        if (IsSpawned)
+            NetworkObject.Despawn(true);
+        else
             Destroy(gameObject);
     }
 
     void OnEnable()
     {
-        if (randomTypeOnSpawn)
+        if (randomTypeOnSpawn && ShouldRandomizeOnEnable())
             AssignRandomType();
         destroyAtTime = Time.time + Mathf.Max(1f, lifetimeSeconds);
         meshRenderer = GetComponentInChildren<MeshRenderer>();
@@ -50,6 +111,15 @@ public class DropItemSimple : MonoBehaviour
             baseColor = meshRenderer.material.color;
         EnsureLabel();
         UpdateLabelText();
+    }
+
+    bool ShouldRandomizeOnEnable()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            return true; // offline or pre-network editor preview
+        if (!IsSpawned)
+            return true; // server just instantiated, not spawned yet
+        return IsServer; // spawned clients never roll their own random
     }
 
     public void SetOwner(Transform ownerTransform)
@@ -106,6 +176,9 @@ public class DropItemSimple : MonoBehaviour
         if (roll < wHp) pickupId = GameItemIdsSimple.HpPotion;
         else if (roll < wHp + wMp) pickupId = GameItemIdsSimple.MpPotion;
         else pickupId = GameItemIdsSimple.Shard;
+
+        if (IsServer && IsSpawned)
+            netPickupId.Value = new FixedString64Bytes(GameItemIdsSimple.Normalize(pickupId));
     }
 
     void EnsureLabel()

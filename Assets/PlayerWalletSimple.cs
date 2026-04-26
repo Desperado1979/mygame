@@ -26,6 +26,12 @@ public class PlayerWalletSimple : MonoBehaviour
 
     public int Gold => gold;
 
+    public static void SetPreferredInstance(PlayerWalletSimple value)
+    {
+        if (value != null)
+            Instance = value;
+    }
+
     public void AddGold(int amount)
     {
         if (amount <= 0) return;

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 /// <summary>D3: 用 SP 解锁技能二阶占位。O=解锁Q2，P=解锁R2。</summary>
 public class PlayerSkillUnlockSimple : MonoBehaviour
@@ -19,6 +20,11 @@ public class PlayerSkillUnlockSimple : MonoBehaviour
 
     void Update()
     {
+        // Netcode: in multiplayer, unlock input must be validated and executed on server.
+        MultiplayerPlayerSimple netPlayer = GetComponent<MultiplayerPlayerSimple>();
+        if (netPlayer != null && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.IsServer)
+            return;
+
         if (hotkeys == null)
             hotkeys = GetComponent<PlayerHotkeysSimple>();
 

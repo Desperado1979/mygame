@@ -10,6 +10,54 @@ using UnityEngine;
 /// </summary>
 public partial class PlayerStateExportSimple
 {
+    /// <summary>从 <c>POST /sync</c>（及同类 JSON）体解析 <c>error</c> / <c>detail</c>，供 HUD 与自检。</summary>
+    public static void ParseSyncErrorEnvelope(string json, out string errorCode, out string detailPreview)
+    {
+        errorCode = "";
+        detailPreview = "";
+        if (string.IsNullOrEmpty(json)) return;
+
+        Match me = Regex.Match(json, "\"error\"\\s*:\\s*\"([^\"]*)\"");
+        if (me.Success) errorCode = me.Groups[1].Value;
+
+        Match md = Regex.Match(json, "\"detail\"\\s*:\\s*\"([^\"]*)\"");
+        if (md.Success)
+        {
+            detailPreview = CollapseWs(Truncate(md.Groups[1].Value, 120));
+            return;
+        }
+
+        if (json.IndexOf("\"detail\"", StringComparison.Ordinal) < 0 || string.IsNullOrEmpty(errorCode))
+            return;
+
+        int d = json.IndexOf("\"detail\"", StringComparison.Ordinal);
+        int colon = json.IndexOf(':', d);
+        if (colon < 0) return;
+        int start = colon + 1;
+        while (start < json.Length && char.IsWhiteSpace(json[start])) start++;
+        if (start >= json.Length) return;
+        int span = Math.Min(160, json.Length - start);
+        string slice = json.Substring(start, span).Trim();
+        detailPreview = CollapseWs(Truncate(slice, 120));
+    }
+
+    /// <summary>在每次 <c>POST /sync</c> 完成后刷新；<paramref name="transportErr"/> 为 Unity 传输错误且 JSON 无 <c>error</c> 时用 <c>transport</c>。</summary>
+    void ApplySyncErrorEnvelopeFromBody(string json, string transportErr)
+    {
+        ParseSyncErrorEnvelope(json, out LastSyncResponseErrorCode, out LastSyncResponseDetailPreview);
+        if (!string.IsNullOrEmpty(LastSyncResponseErrorCode) || !string.IsNullOrEmpty(LastSyncResponseDetailPreview))
+            return;
+        if (string.IsNullOrEmpty(transportErr)) return;
+        LastSyncResponseErrorCode = "transport";
+        LastSyncResponseDetailPreview = CollapseWs(Truncate(transportErr, 96));
+    }
+
+    static string CollapseWs(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        return Regex.Replace(s.Trim(), "\\s+", " ");
+    }
+
     void ParseAndApplyServerSyncResponse(string json)
     {
         ParseWarningSummarySlice(json, out int low, out int high);
@@ -115,5 +163,14 @@ public partial class PlayerStateExportSimple
     {
         if (string.IsNullOrEmpty(s)) return "";
         return s.Length <= max ? s : s.Substring(0, max) + "…";
+    }
+
+    /// <summary>非 2xx 响应若仍含校验/审计片段，则解析到 HUD（如 400 <c>high_warning_block</c> 带 <c>auditSummary</c>）。</summary>
+    public static bool SyncResponseBodyMayHaveHudFields(string body)
+    {
+        if (string.IsNullOrEmpty(body)) return false;
+        return body.IndexOf("\"auditSummary\"", StringComparison.Ordinal) >= 0
+               || body.IndexOf("\"warningSummary\"", StringComparison.Ordinal) >= 0
+               || body.IndexOf("\"warningsByCode\"", StringComparison.Ordinal) >= 0;
     }
 }

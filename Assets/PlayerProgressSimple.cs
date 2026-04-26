@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 /// <summary>D3: 经验二选一占位（升级 or 技能解锁点），对齐 README 第 4 节方向。</summary>
 public class PlayerProgressSimple : MonoBehaviour
@@ -35,6 +36,11 @@ public class PlayerProgressSimple : MonoBehaviour
 
     void Update()
     {
+        // Netcode: in multiplayer, progression input must go through MultiplayerPlayerSimple ServerRpc.
+        MultiplayerPlayerSimple netPlayer = GetComponent<MultiplayerPlayerSimple>();
+        if (netPlayer != null && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.IsServer)
+            return;
+
         if (hotkeys == null)
             hotkeys = GetComponent<PlayerHotkeysSimple>();
 
@@ -107,5 +113,11 @@ public class PlayerProgressSimple : MonoBehaviour
         xpIntoCurrentLevel = Mathf.Max(0, newXpIntoLevel);
         xpBank = Mathf.Max(0, newXpBank);
         skillUnlockPoints = Mathf.Max(0, newSkillPoints);
+    }
+
+    public static void SetPreferredInstance(PlayerProgressSimple value)
+    {
+        if (value != null)
+            Instance = value;
     }
 }

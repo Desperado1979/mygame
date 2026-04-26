@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerPickupSimple : MonoBehaviour
@@ -5,10 +6,47 @@ public class PlayerPickupSimple : MonoBehaviour
     public float pickupRange = 2f;
     public LayerMask dropLayer;
 
+    void Awake()
+    {
+        // Inspector default (0) means "no layers". Also include project "Drop" layer — many drop prefabs use it
+        // (see Resources/Drops/Drop_Coin); mask Default-only would never OverlapSphere them.
+        if (dropLayer.value == 0)
+            dropLayer = BuildDefaultDropLayerMask();
+    }
+
+    static LayerMask BuildDefaultDropLayerMask()
+    {
+        int mask = 1 << 0; // Default (and anything else sharing the player layer for edge cases)
+        int drop = LayerMask.NameToLayer("Drop");
+        if (drop >= 0)
+            mask |= 1 << drop;
+        return mask;
+    }
+
     void Update()
     {
         if (!Input.GetKeyDown(KeyCode.E)) return;
 
+        NetworkObject selfNet = GetComponent<NetworkObject>();
+        if (selfNet != null && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            if (!NetworkManager.Singleton.IsServer)
+            {
+                if (!selfNet.IsOwner)
+                    return;
+                var mp = GetComponent<MultiplayerPlayerSimple>();
+                if (mp != null)
+                    mp.RequestPickupE_ServerRpc();
+                return;
+            }
+        }
+
+        RunServerSidePickup();
+    }
+
+    /// <summary>Server / offline: overlap, grant inventory, despawn or destroy drop.</summary>
+    public void RunServerSidePickup()
+    {
         Collider[] hits = Physics.OverlapSphere(transform.position, pickupRange, dropLayer);
         if (hits.Length == 0)
         {
@@ -16,24 +54,36 @@ public class PlayerPickupSimple : MonoBehaviour
             return;
         }
 
-        Collider closest = hits[0];
-        float bestDist = Vector3.Distance(transform.position, closest.transform.position);
-
-        for (int i = 1; i < hits.Length; i++)
+        // Default layer can include this player's own capsule; closest would be "self" (dist ~0) and
+        // the old code would Destroy(this) after adding loot — despawn / hard freeze. Only consider hits that carry a drop.
+        Collider closest = null;
+        float bestSqr = float.MaxValue;
+        for (int i = 0; i < hits.Length; i++)
         {
-            float dist = Vector3.Distance(transform.position, hits[i].transform.position);
-            if (dist < bestDist)
+            Collider c = hits[i];
+            if (c == null) continue;
+            if (IsSelfCharacterCollider(c)) continue;
+            DropItemSimple d = c.GetComponent<DropItemSimple>() ?? c.GetComponentInParent<DropItemSimple>();
+            if (d == null) continue;
+            float sqr = (c.bounds.center - transform.position).sqrMagnitude;
+            if (sqr < bestSqr)
             {
-                closest = hits[i];
-                bestDist = dist;
+                bestSqr = sqr;
+                closest = c;
             }
         }
 
-        DropItemSimple drop = closest.GetComponent<DropItemSimple>();
-        float w = drop != null ? drop.pickupWeight : 1f;
-        string id = drop != null ? drop.pickupId : GameItemIdsSimple.GenericDrop;
-        int count = drop != null ? drop.pickupCount : 1;
-        if (drop != null && !drop.CanBePickedBy(transform))
+        if (closest == null)
+        {
+            Debug.Log("No drop in range (layer mask may be wrong or nothing with DropItemSimple)");
+            return;
+        }
+
+        DropItemSimple drop = closest.GetComponent<DropItemSimple>() ?? closest.GetComponentInParent<DropItemSimple>();
+        float w = drop.pickupWeight;
+        string id = drop.pickupId;
+        int count = drop.pickupCount;
+        if (!drop.CanBePickedBy(transform))
         {
             ServerAuditLogSimple.Push(
                 ServerAuditLogSimple.CategorySrvValPickupDenied,
@@ -52,8 +102,22 @@ public class PlayerPickupSimple : MonoBehaviour
             }
         }
 
-        Debug.Log("Picked: " + closest.name);
-        Destroy(closest.gameObject);
+        MultiplayerPlayerSimple mp = GetComponent<MultiplayerPlayerSimple>();
+        if (mp != null && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+            mp.MirrorInventoryAddClientRpc(w, id, count);
+
+        Debug.Log("Picked: " + drop.name);
+        NetworkObject dno = drop.GetComponent<NetworkObject>();
+        if (dno != null && dno.IsSpawned)
+            dno.Despawn(true);
+        else
+            Destroy(drop.gameObject);
+    }
+
+    bool IsSelfCharacterCollider(Collider c)
+    {
+        if (c == null) return true;
+        return c.transform == transform || c.transform.IsChildOf(transform);
     }
 
     void OnDrawGizmosSelected()

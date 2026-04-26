@@ -26,6 +26,10 @@ public class PlayerSkillFrostSimple : MonoBehaviour
 
     void Update()
     {
+        MultiplayerPlayerSimple net = GetComponent<MultiplayerPlayerSimple>();
+        if (net != null)
+            return; // Multiplayer path is handled by MultiplayerPlayerSimple server RPC.
+
         if (!Input.GetKeyDown(skillKey))
             return;
 

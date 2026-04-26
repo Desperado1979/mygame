@@ -15,6 +15,8 @@ public class PlayerHotkeysSimple : MonoBehaviour
     public KeyCode buyHpPotion = KeyCode.B;
     public KeyCode buyMpPotion = KeyCode.N;
     public KeyCode sellPotion = KeyCode.V;
+    [Tooltip("快速清背包：优先丢材料(shard)，其次蓝药(mana)。")]
+    public KeyCode discardJunk = KeyCode.C;
     public KeyCode enhance = KeyCode.T;
 
     [Header("Bank")]
@@ -53,4 +55,7 @@ public class PlayerHotkeysSimple : MonoBehaviour
     public KeyCode postSyncToServerAlt = KeyCode.Minus;
     [Tooltip("等同 ;：GET /metrics/audit-categories")]
     public KeyCode metricsAuditCategoriesAlt = KeyCode.None;
+
+    [Header("System")]
+    public KeyCode quitGame = KeyCode.Escape;
 }

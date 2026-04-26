@@ -13,14 +13,135 @@ MonoBehaviour:
   m_Name: DefaultP1AContent
   m_EditorClassIdentifier: Assembly-CSharp::P1AContentConfig
   p1TargetKills: 5
+  p1ShowOrderHintInHud: 1
+  p1OrderHintShort: R冰→Q火
+  p1ShowWaveInHud: 1
+  p1HudTag: P1
+  p1HudCompleteSuffix: OK
+  p1HudTipLabel: tip
+  p1WaveHudTag: Wv
+  p1WaveHudDone: Done
+  p1WaveHudNone: "--"
+  hudTagEnemy: "E"
+  hudTagPos: "P"
+  hudTagMp: MP
+  hudTagHp: HP
+  hudTagFlow: Flow
+  hudFlowCompleteSuffix: OK
+  hudFlowStepPrefix: S
+  hudTagArea: A
+  hudTagPvp: PvP
+  hudTagParty: Party
+  hudTagSkillQ: Q
+  hudTagSkillR: R
+  hudSkillRdyText: rdy
+  hudSkillSecondsSuffix: s
+  hudTagDrop: Drop
+  hudDropShareSuffix: Share
+  hudDropSoloSuffix: Solo
+  hudPvpValueOn: On
+  hudPvpValueOff: "Off"
+  hudPvpRedLabel: Red
+  hudTagEq: Eq
+  hudTagLv: Lv
+  hudTagDiff: 差
+  hudTagSp: SP
+  hudTagXpPool: XP池
+  hudTagWeight: W
+  hudTagInvHp: H
+  hudTagInvMp: M
+  hudTagGold: G
+  hudTagBankGold: BG
+  hudTagBankHp: BH
+  hudTagBankMp: BM
+  hudTagMasteryQ: q
+  hudTagMasteryR: r
+  hudTagUnlockQt: Qt
+  hudTagUnlockRt: Rt
+  hudTagEnhancePlus: "+"
+  hudTagDr: DR
+  hudTagD5Banner: D5
+  hudTagVal: val
+  hudTagSrvVal: SrvVal
+  hudTagCodes: codes
+  hudTagNet: NET
+  hudTagHlt: HLT
+  hudTagAudC: AudC
+  hudTagSyn: syn
+  hudTagF2: f2
+  hudTagEtg: etg
+  hudTagD5Dur: d
+  hudTagD5Retry: r
+  hudTagErr: e
+  hudTagDetail: dt
+  hudTagIfm: ifm
+  hudTagEtgPre: pre
+  hudTagD5DurationUnit: ms
+  hudTagValOk: ok
+  hudTagValNo: no
+  hudTagEqOk: "+"
+  hudTagEqBad: X
+  hudTagNetAlertSuffix: "!"
+  hudHelpTextProgress: "  U升 I点 O解Q2 P解R2 1红 2蓝 B买红 N买蓝 V卖药"
+  hudHelpTextBank: "  F5存金 F6取金 F7存药 F8取药"
+  hudHelpTextParty: "  小键盘+/-队伍"
+  hudHelpTextChat: "  Enter本地 `系统"
+  hudHelpTextKeys: "Keys Esc退出 F1健康 ;审计类 F4审计 F3整包 F2POST F12状态 F9存 F10读 F11清"
+  hudHelpTextDeath: "  死亡掉金并复活"
+  hudTagPosNA: "N/A"
+  hudTagSrvValLowMark: L
+  hudTagSrvValHighMark: H
+  hudTagPercent: "%"
+  hudPunctNearEnemyL: "["
+  hudPunctNearEnemyR: "]"
+  hudPunctStatSlash: "/"
+  hudPunctEllipsis: "…"
+  hudPunctDebugWideSpace: "  "
+  hudPunctD5BannerSpace: " "
+  hudPunctPvpParenOpen: "("
+  hudPunctPvpParenClose: ")"
+  hudPunctLabelColon: ":"
+  hudPunctTipColon: ":"
+  hudMultiTag: MP
+  hudMultiDisconnectedTail: " …"
+  hudMultiRoleHost: host
+  hudMultiRoleCli: cli
+  hudMultiRoleSrv: srv
+  hudMultiRoleAuto: auto
+  hudMultiStateOff: off
+  hudMultiCcKey: cc
+  hudMultiBlockGap: " "
+  hudMultiAddrPortSep: ":"
+  hudVfxBurnLabel: "燃"
+  hudVfxFrostLabel: "冰"
+  hudVfxTimeUnitS: s
+  hudVfxDualMidSpace: " "
+  hudTruncErrCodeMax: 36
+  hudTruncErrCodeKeep: 33
+  hudTruncDetailMax: 56
+  hudTruncDetailKeep: 53
+  hudMultiKeyColon: ":"
+  hudMultiCcToAddrSpace: " "
+  hudEnemyCountIntervalSec: 0.33
+  hudNearEnemyStatusIntervalSec: 0.28
+  hudNearEnemyScanRadius: 18
+  hudPosDecimals: 1
+  hudCdDecimals: 1
+  hudDrPercentDecimals: 0
+  hudNearEnemySecondsDecimals: 1
+  hudXpProgressDecimals: 0
+  hudWeightDecimals: 0
+  hudD5DurationDecimals: 0
   waveEnemyCounts:
   - 10
   - 10
   - 10
   delayBetweenWaves: 2
   waveSpawnRingRadius: 8
+  loopWaves: 0
   wildEnemyCount: 5
   wildRingRadius: 8
+  enemySpawnHeightY: 0.5
   miniBossHpMultiplier: 3
   bossPhaseHpFraction: 0.5
   bossPhaseChaseSpeedMul: 1.25

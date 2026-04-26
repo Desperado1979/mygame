@@ -23,6 +23,7 @@ public partial class PlayerStateExportSimple
         KeyCode mdbAlt = hotkeys != null ? hotkeys.metricsDashboardAlt : KeyCode.None;
         KeyCode macAlt = hotkeys != null ? hotkeys.metricsAuditCategoriesAlt : KeyCode.None;
         KeyCode healthAlt = hotkeys != null ? hotkeys.probeServerHealthAlt : KeyCode.None;
+        KeyCode quitKey = hotkeys != null ? hotkeys.quitGame : KeyCode.Escape;
 
         if (Input.GetKeyDown(stateKey))
             ExportNow();
@@ -30,6 +31,8 @@ public partial class PlayerStateExportSimple
             ExportAuditNow();
         if (Input.GetKeyDown(requestKey))
             ExportRequestPayloadNow();
+        if (Input.GetKeyDown(quitKey))
+            QuitGame();
 
         if (Input.GetKeyDown(healthKey) || (healthAlt != KeyCode.None && Input.GetKeyDown(healthAlt)))
             StartCoroutine(GetHealthProbeRoutine());
@@ -45,5 +48,14 @@ public partial class PlayerStateExportSimple
             StartCoroutine(GetMetricsAlertsPlayersRoutine());
         if (Input.GetKeyDown(mdbKey) || (mdbAlt != KeyCode.None && Input.GetKeyDown(mdbAlt)))
             StartCoroutine(GetMetricsDashboardRoutine());
+    }
+
+    static void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 }

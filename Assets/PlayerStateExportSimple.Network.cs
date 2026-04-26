@@ -79,6 +79,9 @@ public partial class PlayerStateExportSimple
         string json = JsonUtility.ToJson(body, true);
         byte[] raw = Encoding.UTF8.GetBytes(json);
         LastSyncRetryCount = 0;
+        LastSyncPostHttpCode = -1;
+        LastSyncResponseErrorCode = "";
+        LastSyncResponseDetailPreview = "";
         string pidForEtag = body != null && !string.IsNullOrEmpty(body.playerId) ? body.playerId : playerId;
 
         yield return PrefetchStateEtagBeforePostIfNeeded(pidForEtag);
@@ -109,6 +112,7 @@ public partial class PlayerStateExportSimple
                 LastPostResponsePreview = Truncate(text, 400);
                 LastSyncError = req.result != UnityWebRequest.Result.Success ? req.error : "";
                 LastSyncPostStatusTag = ClassifySyncPostStatus(LastHttpCode, text, LastSyncError);
+                LastSyncPostHttpCode = LastHttpCode;
                 string durHdr = req.GetResponseHeader("X-Sync-Duration-Ms");
                 LastSyncDurationMs = int.TryParse(durHdr, out int dms) ? dms : -1;
 
@@ -130,7 +134,11 @@ public partial class PlayerStateExportSimple
                     continue;
                 }
 
-                if (req.result == UnityWebRequest.Result.Success && LastHttpCode >= 200 && LastHttpCode < 300)
+                ApplySyncErrorEnvelopeFromBody(text, LastSyncError);
+
+                if (LastHttpCode >= 200 && LastHttpCode < 300)
+                    ParseAndApplyServerSyncResponse(text);
+                else if (SyncResponseBodyMayHaveHudFields(text))
                     ParseAndApplyServerSyncResponse(text);
                 else
                 {
@@ -139,7 +147,6 @@ public partial class PlayerStateExportSimple
                     LastNetAlertHigh = false;
                     LastSyncValidationOk = null;
                     LastAuditCategoryPreview = "";
-                    LastMetricsAuditCategoriesPreview = "";
                 }
 
                 TryWriteSyncSnapshotFile();

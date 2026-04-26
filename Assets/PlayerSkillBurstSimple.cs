@@ -29,6 +29,10 @@ public class PlayerSkillBurstSimple : MonoBehaviour
 
     void Update()
     {
+        MultiplayerPlayerSimple net = GetComponent<MultiplayerPlayerSimple>();
+        if (net != null)
+            return; // Multiplayer path is handled by MultiplayerPlayerSimple server RPC.
+
         if (!Input.GetKeyDown(skillKey))
             return;
 
@@ -78,7 +82,7 @@ public class PlayerSkillBurstSimple : MonoBehaviour
         {
             EnemyHealthSimple enemy = hits[i].GetComponent<EnemyHealthSimple>();
             if (enemy == null) continue;
-            enemy.TakeHit(rolledDamage, transform.position);
+            enemy.TakeHit(rolledDamage, transform.position, gameObject);
             damaged++;
 
             MonsterP1A1Mark p1 = hits[i].GetComponent<MonsterP1A1Mark>();

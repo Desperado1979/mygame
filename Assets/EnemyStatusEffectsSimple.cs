@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>D2-2: Burn (DOT) + Freeze (root placeholder, no DOT) — aligned with README §11.1.</summary>
@@ -20,6 +21,17 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
 
     Rigidbody body;
     EnemyHealthSimple _health;
+
+    float SimTime
+    {
+        get
+        {
+            NetworkObject n = GetComponent<NetworkObject>();
+            if (n != null && n.IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+                return (float)NetworkManager.Singleton.ServerTime.Time;
+            return Time.time;
+        }
+    }
 
     /// <summary>HUD：存活且启用的敌人实例（无全场景 FindObjectsOfType）。</summary>
     static readonly List<EnemyStatusEffectsSimple> s_HudInstances = new List<EnemyStatusEffectsSimple>();
@@ -73,7 +85,7 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
 
     void Update()
     {
-        float t = Time.time;
+        float t = SimTime;
         TickBurn(t);
         ClampVelocityIfFrozen(t);
         UpdateTint(t);
@@ -126,33 +138,48 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
     /// <summary>Refresh or extend burn duration; DOT ticks use burnTickInterval.</summary>
     public void ApplyBurn(float durationSeconds)
     {
-        float t = Time.time;
+        float t = SimTime;
         burnEndTime = Mathf.Max(burnEndTime, t + Mathf.Max(0.01f, durationSeconds));
         nextBurnTickTime = Mathf.Min(nextBurnTickTime, t + 0.02f);
+        var aut = GetComponent<MultiplayerEnemyAuthoritySimple>();
+        if (aut != null && aut.IsServer)
+            aut.SetServerBurnEnd(burnEndTime);
     }
 
     public void ApplyFreeze(float durationSeconds)
     {
-        float t = Time.time;
+        float t = SimTime;
         freezeEndTime = Mathf.Max(freezeEndTime, t + Mathf.Max(0.01f, durationSeconds));
+        var aut = GetComponent<MultiplayerEnemyAuthoritySimple>();
+        if (aut != null && aut.IsServer)
+            aut.SetServerFreezeEnd(freezeEndTime);
     }
 
-    public bool IsFrozen => Time.time < freezeEndTime;
-    public bool IsBurning => Time.time < burnEndTime;
+    public bool IsFrozen => SimTime < freezeEndTime;
+    public bool IsBurning => SimTime < burnEndTime;
 
     /// <summary>For future movers: 0 while frozen.</summary>
     public float MoveSpeedMultiplier => IsFrozen ? 0f : 1f;
 
     public string GetHudSummary()
     {
-        float t = Time.time;
+        float t = SimTime;
         if (t >= burnEndTime && t >= freezeEndTime)
             return "";
 
+        P1AContentConfig cfg = P1AContentConfig.TryLoadDefault();
+        string burnL = (cfg != null && !string.IsNullOrWhiteSpace(cfg.hudVfxBurnLabel)) ? cfg.hudVfxBurnLabel.Trim() : "燃";
+        string iceL = (cfg != null && !string.IsNullOrWhiteSpace(cfg.hudVfxFrostLabel)) ? cfg.hudVfxFrostLabel.Trim() : "冰";
+        string unitS = (cfg != null && !string.IsNullOrWhiteSpace(cfg.hudVfxTimeUnitS)) ? cfg.hudVfxTimeUnitS.Trim() : "s";
+        string midS = " ";
+        if (cfg != null && !string.IsNullOrWhiteSpace(cfg.hudVfxDualMidSpace)) midS = cfg.hudVfxDualMidSpace;
+        int secDp = cfg != null ? Mathf.Clamp(cfg.hudNearEnemySecondsDecimals, 0, 3) : 1;
+        string secFmt = "F" + secDp;
+
         if (t < burnEndTime && t < freezeEndTime)
-            return $"燃{burnEndTime - t:F1}s 冰{freezeEndTime - t:F1}s";
+            return burnL + (burnEndTime - t).ToString(secFmt) + unitS + midS + iceL + (freezeEndTime - t).ToString(secFmt) + unitS;
         if (t < burnEndTime)
-            return $"燃{burnEndTime - t:F1}s";
-        return $"冰{freezeEndTime - t:F1}s";
+            return burnL + (burnEndTime - t).ToString(secFmt) + unitS;
+        return iceL + (freezeEndTime - t).ToString(secFmt) + unitS;
     }
 }

@@ -631,6 +631,10 @@ MonoBehaviour:
   currentHp: 100
   respawnPoint: {fileID: 2007341347}
   respawnDelaySeconds: 1.5
+  respawnInvulnerableSeconds: 1.2
+  respawnNoAggroSeconds: 3
+  respawnEnemyRetreatSeconds: 2
+  respawnEnemyRetreatRadius: 7
   goldDropPercentOnDeath: 20
 --- !u!114 &232738303
 MonoBehaviour:
@@ -795,6 +799,7 @@ MonoBehaviour:
   probeServerHealthAlt: 48
   postSyncToServerAlt: 45
   metricsAuditCategoriesAlt: 0
+  quitGame: 27
 --- !u!114 &232738311
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -863,9 +868,12 @@ MonoBehaviour:
   LastSyncPostStatusTag: 
   LastSyncDurationMs: -1
   LastSyncRetryCount: 0
+  LastSyncPostHttpCode: -1
   LastServerETag: 
   LastIfMatchWasSent: 0
   LastStateEtagPrefetchRan: 0
+  LastSyncResponseErrorCode: 
+  LastSyncResponseDetailPreview: 
   progress: {fileID: 232738299}
   wallet: {fileID: 232738301}
   inventory: {fileID: 232738298}
@@ -1433,7 +1441,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cityCenter: {fileID: 1682093491}
-  cityRadius: 16
+  cityRadius: 2
   citySpawnPoint: {fileID: 1152183493}
   fieldSpawnPoint: {fileID: 1483120297}
 --- !u!4 &561859370
@@ -1709,9 +1717,9 @@ GameObject:
   m_Component:
   - component: {fileID: 902002011}
   - component: {fileID: 902002012}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: P1A_WaveSpawner
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1754,6 +1762,8 @@ MonoBehaviour:
   spawnY: 0.5
   loopWaves: 1
   center: {fileID: 0}
+  spawnPublicEliteEachWave: 1
+  eliteEveryNWaves: 1
   currentWaveIndex: 0
   allWavesComplete: 0
 --- !u!1 &902003010

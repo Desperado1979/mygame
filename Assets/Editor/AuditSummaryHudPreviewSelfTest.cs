@@ -36,6 +36,26 @@ public static class AuditSummaryHudPreviewSelfTest
         string empty = PlayerStateExportSimple.AuditSummaryHudPreviewFromJson("{}");
         if (empty != "")
             throw new Exception("expected empty string, got: " + empty);
+
+        const string rejectJson =
+            "{\"ok\":false,\"error\":\"srvval_audit_block\",\"auditSummary\":{\"total\":2,\"SrvVal_LoadReject\":2},\"validation\":{\"ok\":false,\"warningSummary\":{\"low\":0,\"high\":0}}}";
+        string rej = PlayerStateExportSimple.AuditSummaryHudPreviewFromJson(rejectJson);
+        if (rej.IndexOf("Ld:2", StringComparison.Ordinal) < 0)
+            throw new Exception("expected Ld:2 in: " + rej);
+
+        if (!PlayerStateExportSimple.SyncResponseBodyMayHaveHudFields(rejectJson))
+            throw new Exception("SyncResponseBodyMayHaveHudFields expected true for rejectJson");
+        if (PlayerStateExportSimple.SyncResponseBodyMayHaveHudFields("{\"ok\":false,\"error\":\"invalid_json\"}"))
+            throw new Exception("SyncResponseBodyMayHaveHudFields expected false for bare error");
+
+        PlayerStateExportSimple.ParseSyncErrorEnvelope(
+            "{\"ok\":false,\"error\":\"precondition_failed\",\"detail\":\"if_match_mismatch\"}",
+            out string ec,
+            out string dp);
+        if (ec != "precondition_failed")
+            throw new Exception("ParseSyncErrorEnvelope error code mismatch: " + ec);
+        if (dp.IndexOf("if_match", StringComparison.Ordinal) < 0)
+            throw new Exception("ParseSyncErrorEnvelope detail mismatch: " + dp);
     }
 }
 #endif

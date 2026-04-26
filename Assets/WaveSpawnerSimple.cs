@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 /// <summary>P1-A-2：按「波次表」刷怪；清场后经间隔再刷下一波。可与 P1-A-1 共用预制体。</summary>
@@ -20,6 +22,9 @@ public class WaveSpawnerSimple : MonoBehaviour
     public float spawnY = 0.5f;
     public bool loopWaves;
     public Transform center;
+    [Header("Public objective mini-event")]
+    public bool spawnPublicEliteEachWave = true;
+    public int eliteEveryNWaves = 1;
 
     [Header("Runtime (read-only)")]
     public int currentWaveIndex;
@@ -41,6 +46,8 @@ public class WaveSpawnerSimple : MonoBehaviour
         {
             delayBetweenWaves = contentConfig.delayBetweenWaves;
             spawnRingRadius = contentConfig.waveSpawnRingRadius;
+            spawnY = contentConfig.enemySpawnHeightY;
+            loopWaves = contentConfig.loopWaves;
             // 仅当配置里明确有多段波次时才覆盖，避免 Resources 表缺字段时被反序列化成 null/空，把场景里的 2,3,5 冲掉
             if (contentConfig.waveEnemyCounts != null && contentConfig.waveEnemyCounts.Length > 0)
                 waveEnemyCounts = (int[])contentConfig.waveEnemyCounts.Clone();
@@ -61,6 +68,9 @@ public class WaveSpawnerSimple : MonoBehaviour
 
     void Update()
     {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.IsServer)
+            return;
+
         if (enemyPrefab == null || allWavesComplete)
             return;
 
@@ -104,13 +114,43 @@ public class WaveSpawnerSimple : MonoBehaviour
         int n = Mathf.Max(1, waveEnemyCounts[_waveCursor]);
         currentWaveIndex = _waveCursor;
         Vector3 c = center != null ? center.position : transform.position;
+        bool spawnEliteThisWave = spawnPublicEliteEachWave && Mathf.Max(1, eliteEveryNWaves) > 0 && (_waveCursor % Mathf.Max(1, eliteEveryNWaves) == 0);
 
         for (int i = 0; i < n; i++)
         {
             float ang = (i / (float)n) * Mathf.PI * 2f;
             Vector3 p = c + new Vector3(Mathf.Cos(ang) * spawnRingRadius, spawnY, Mathf.Sin(ang) * spawnRingRadius);
             GameObject go = Instantiate(enemyPrefab, p, Quaternion.identity);
+            if (spawnEliteThisWave && i == 0)
+            {
+                if (go.GetComponent<PublicObjectiveEliteSimple>() == null)
+                    go.AddComponent<PublicObjectiveEliteSimple>();
+                PublicObjectiveEventStateSimple st = PublicObjectiveEventStateSimple.Instance;
+                if (st != null)
+                    st.ServerMarkEliteSpawned(_waveCursor + 1);
+            }
+            TrySpawnAsNetworkEnemy(go);
             _alive.Add(go);
         }
+    }
+
+    static void TrySpawnAsNetworkEnemy(GameObject go)
+    {
+        if (go == null)
+            return;
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening || !NetworkManager.Singleton.IsServer)
+            return;
+
+        NetworkObject no = go.GetComponent<NetworkObject>();
+        if (no == null)
+            no = go.AddComponent<NetworkObject>();
+
+        if (go.GetComponent<NetworkTransform>() == null)
+            go.AddComponent<NetworkTransform>();
+        if (go.GetComponent<MultiplayerEnemyAuthoritySimple>() == null)
+            go.AddComponent<MultiplayerEnemyAuthoritySimple>();
+
+        if (!no.IsSpawned)
+            no.Spawn();
     }
 }

@@ -32,7 +32,7 @@ public class PlayerSaveSimple : MonoBehaviour
     void Start()
     {
         if (autoLoadOnStart)
-            Load();
+            InternalLoad(auditRejectOnEmpty: false);
     }
 
     void Update()
@@ -47,7 +47,7 @@ public class PlayerSaveSimple : MonoBehaviour
         if (Input.GetKeyDown(saveKey))
             Save();
         if (Input.GetKeyDown(loadKey))
-            Load();
+            InternalLoad(auditRejectOnEmpty: true);
         if (Input.GetKeyDown(clearKey))
             ClearSave();
     }
@@ -95,13 +95,20 @@ public class PlayerSaveSimple : MonoBehaviour
         Debug.Log("Saved (F9)");
     }
 
-    public void Load()
+    /// <summary>F10：读档；无存档时写入 <see cref="ServerAuditLogSimple.CategorySrvValLoadReject"/>（与启动自动读档区分）。</summary>
+    public void Load() => InternalLoad(auditRejectOnEmpty: true);
+
+    /// <param name="auditRejectOnEmpty">无存档键时是否写入 <see cref="ServerAuditLogSimple.CategorySrvValLoadReject"/>；启动自动读档为 <c>false</c>。</param>
+    void InternalLoad(bool auditRejectOnEmpty)
     {
         if (!PlayerPrefs.HasKey(Prefix + "level"))
         {
-            ServerAuditLogSimple.Push(
-                ServerAuditLogSimple.CategorySrvValLoadReject,
-                "op=load&reason=no_save");
+            if (auditRejectOnEmpty)
+            {
+                ServerAuditLogSimple.Push(
+                    ServerAuditLogSimple.CategorySrvValLoadReject,
+                    "op=load&reason=no_save");
+            }
             return;
         }
         int storedVersion = PlayerPrefs.GetInt(Prefix + "version", 0);

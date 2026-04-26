@@ -51,6 +51,9 @@ public partial class PlayerStateExportSimple : MonoBehaviour
     /// <summary><c>POST /sync</c> 因 **429** 重试的次数（仅统计已发生的等待重试）。</summary>
     public int LastSyncRetryCount;
 
+    /// <summary>最近一次 <c>POST /sync</c> 的 HTTP 状态码；未发起过 F2 同步时为 <c>-1</c>（与 <see cref="LastHttpCode"/> 区分，后者会被 F1/<c>;</c> 等 GET 覆盖）。</summary>
+    public int LastSyncPostHttpCode = -1;
+
     /// <summary>D17：最近一次从 <c>POST /sync</c> 响应头 <c>ETag</c> 解析出的强校验值（十六进制，无引号）；未收到则为空。</summary>
     public string LastServerETag = "";
 
@@ -59,6 +62,12 @@ public partial class PlayerStateExportSimple : MonoBehaviour
 
     /// <summary>D18：本次 F2 流程是否在 POST 前执行了 <c>GET /state</c> 预取 ETag（仅观测）。</summary>
     public bool LastStateEtagPrefetchRan;
+
+    /// <summary>最近一次 <c>POST /sync</c> 响应 JSON 中的 <c>error</c> 字段（无则空）；纯传输失败时为 <c>transport</c>。</summary>
+    public string LastSyncResponseErrorCode = "";
+
+    /// <summary><c>error</c> 配套 <c>detail</c> 的 HUD 截断预览（对象型 <c>detail</c> 为原始片段缩略）。</summary>
+    public string LastSyncResponseDetailPreview = "";
 
     public PlayerProgressSimple progress;
     public PlayerWalletSimple wallet;

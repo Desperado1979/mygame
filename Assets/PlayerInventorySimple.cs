@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>D3: 背包负重占位 — 拾取失败则不掉落物不销毁。</summary>
@@ -30,12 +31,31 @@ public class PlayerInventorySimple : MonoBehaviour
     {
         if (hotkeys == null)
             hotkeys = GetComponent<PlayerHotkeysSimple>();
+        MultiplayerPlayerSimple mpNet = GetComponent<MultiplayerPlayerSimple>();
 
         KeyCode hpKey = hotkeys != null ? hotkeys.useHpPotion : KeyCode.Alpha1;
         KeyCode mpKey = hotkeys != null ? hotkeys.useMpPotion : KeyCode.Alpha2;
         KeyCode buyHpKey = hotkeys != null ? hotkeys.buyHpPotion : KeyCode.B;
         KeyCode buyMpKey = hotkeys != null ? hotkeys.buyMpPotion : KeyCode.N;
         KeyCode sellKey = hotkeys != null ? hotkeys.sellPotion : KeyCode.V;
+        KeyCode discardKey = hotkeys != null ? hotkeys.discardJunk : KeyCode.C;
+
+        if (mpNet != null && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.IsServer)
+        {
+            if (Input.GetKeyDown(hpKey))
+                mpNet.RequestUsePotion_ServerRpc(true);
+            if (Input.GetKeyDown(mpKey))
+                mpNet.RequestUsePotion_ServerRpc(false);
+            if (Input.GetKeyDown(buyHpKey))
+                mpNet.RequestBuyPotion_ServerRpc(true);
+            if (Input.GetKeyDown(buyMpKey))
+                mpNet.RequestBuyPotion_ServerRpc(false);
+            if (Input.GetKeyDown(sellKey))
+                mpNet.RequestSellOnePotion_ServerRpc();
+            if (Input.GetKeyDown(discardKey))
+                mpNet.RequestDiscardJunk_ServerRpc();
+            return;
+        }
 
         if (Input.GetKeyDown(hpKey))
             TryUseHpPotion();
@@ -47,6 +67,8 @@ public class PlayerInventorySimple : MonoBehaviour
             TryBuyMpPotion();
         if (Input.GetKeyDown(sellKey))
             TrySellOnePotion();
+        if (Input.GetKeyDown(discardKey))
+            TryDiscardOneJunk();
     }
 
     public bool TryAddPickup(float weight, string itemId = "loot", int count = 1)
@@ -145,6 +167,19 @@ public class PlayerInventorySimple : MonoBehaviour
         return true;
     }
 
+    /// <summary>Client mirror only: apply server-confirmed consume without extra heal/restore side effects.</summary>
+    public void ApplyRemotePotionConsume(string itemId, int count, float weightPerItem = 1f)
+    {
+        itemId = GameItemIdsSimple.Normalize(itemId);
+        count = Mathf.Max(1, count);
+        weightPerItem = Mathf.Max(0.01f, weightPerItem);
+        int cur = GetCount(itemId);
+        int next = Mathf.Max(0, cur - count);
+        itemCounts[itemId] = next;
+        stackCount = Mathf.Max(0, stackCount - count);
+        currentWeight = Mathf.Max(0f, currentWeight - weightPerItem * count);
+    }
+
     public bool TryBuyHpPotion()
     {
         PlayerWalletSimple wallet = GetComponent<PlayerWalletSimple>();
@@ -236,6 +271,31 @@ public class PlayerInventorySimple : MonoBehaviour
             ServerAuditLogSimple.CategorySrvValTradeReject,
             "op=sell&reason=no_potions");
         return false;
+    }
+
+    public bool TryDiscardOneJunk()
+    {
+        if (TryDiscardById(GameItemIdsSimple.Shard, 1f))
+            return true;
+        if (TryDiscardById(mpPotionId, 1f))
+            return true;
+        ServerAuditLogSimple.Push(
+            ServerAuditLogSimple.CategorySrvValTradeReject,
+            "op=discard_junk&reason=no_junk");
+        return false;
+    }
+
+    bool TryDiscardById(string itemId, float unitWeight)
+    {
+        itemId = GameItemIdsSimple.Normalize(itemId);
+        int c = GetCount(itemId);
+        if (c <= 0)
+            return false;
+        itemCounts[itemId] = c - 1;
+        stackCount = Mathf.Max(0, stackCount - 1);
+        currentWeight = Mathf.Max(0f, currentWeight - Mathf.Max(0.1f, unitWeight));
+        ServerAuditLogSimple.Push("inv_discard", $"{itemId},count=1");
+        return true;
     }
 
     public bool RemoveItemById(string itemId, int count, float unitWeight = 1f)
