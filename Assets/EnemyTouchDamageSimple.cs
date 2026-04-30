@@ -10,12 +10,22 @@ public class EnemyTouchDamageSimple : MonoBehaviour
 
     float nextDamageTime;
     EnemyChaseSimple chase;
+    float keepDistanceExtraRange = 0.2f;
+
+    void Awake()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        touchDamage = Mathf.Max(1, d.enemyTouchDamage);
+        damageInterval = Mathf.Max(0.05f, d.enemyTouchDamageInterval);
+        touchRange = Mathf.Max(0.1f, d.enemyTouchRange);
+        keepDistanceExtraRange = Mathf.Max(0f, d.enemyTouchKeepDistanceExtraRange);
+    }
 
     float GetEffectiveTouchRange()
     {
         float r = touchRange;
         if (chase != null)
-            r = Mathf.Max(r, chase.stopRange + 0.75f);
+            r = Mathf.Max(r, chase.CurrentEngageKeepDistance + keepDistanceExtraRange);
         return r;
     }
 

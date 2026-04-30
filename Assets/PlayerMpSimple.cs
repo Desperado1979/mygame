@@ -1,18 +1,51 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>D2-1: MP pool with optional regen (placeholder for INT-driven MP later).</summary>
+/// <summary>D2/D3: MP 池；上限由 <see cref="PlayerDerivedStatsSimple"/> 按 README §5.2 写入。</summary>
+[DefaultExecutionOrder(40)]
 public class PlayerMpSimple : MonoBehaviour
 {
     public int maxMp = 100;
-    [Tooltip("MP per second while below max.")]
+    [Tooltip("MP per second while below max.（DefaultD3Growth mpRegenPerSecond 覆盖）")]
     public float mpRegenPerSecond = 1.2f;
 
     float mp;
 
+    void Awake()
+    {
+        ApplyD3MpRegenFromBalance();
+    }
+
+    void ApplyD3MpRegenFromBalance()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        mpRegenPerSecond = Mathf.Max(0f, d.mpRegenPerSecond);
+    }
+
     void Start()
     {
-        mp = maxMp;
+        if (maxMp > 0 && mp <= 0f)
+            mp = maxMp;
+    }
+
+    /// <summary>D3：由公式刷新 MaxMP；默认保留蓝量比例以免升级瞬间突变手感。</summary>
+    public void ApplyMaxMpFromDerived(int newMaxMp, bool preserveFillRatio)
+    {
+        newMaxMp = Mathf.Max(1, newMaxMp);
+        if (newMaxMp == maxMp && preserveFillRatio)
+            return;
+
+        float r = maxMp <= 0 ? 1f : Mp01;
+        maxMp = newMaxMp;
+        if (preserveFillRatio)
+        {
+            if (mp <= 0f)
+                mp = 0f;
+            else
+                mp = Mathf.Clamp(r * maxMp, 0f, maxMp);
+        }
+        else
+            mp = Mathf.Clamp(mp, 0f, maxMp);
     }
 
     void Update()

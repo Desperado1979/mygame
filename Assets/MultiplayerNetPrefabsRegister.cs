@@ -36,6 +36,84 @@ public static class MultiplayerNetPrefabsRegister
         Debug.Log("[MP] Registered NetworkConfig.PlayerPrefab in NetworkConfig.Prefabs: " + p.name);
     }
 
+    /// <summary>与 PlayerPrefab 同理：服端 Spawn 的运行时对象必须在双方 Prefabs 表里，否则纯 Client 无法生成本地副本、<see cref="PublicObjectiveEventStateSimple"/> 的 NetworkVariable 不会到端上。</summary>
+    public const string PublicObjectiveStateResourcesPath = "Netcode/PublicObjectiveStateNet";
+    public const string PartyRuntimeStateResourcesPath = "Netcode/PartyRuntimeStateNet";
+    public const string ChatRoomStateResourcesPath = "Netcode/ChatRoomStateNet";
+
+    public static void RegisterChatRoomStatePrefab(NetworkManager nm)
+    {
+        if (nm == null || nm.NetworkConfig == null)
+            return;
+        GameObject p = Resources.Load<GameObject>(ChatRoomStateResourcesPath);
+        if (p == null)
+        {
+            Debug.LogWarning(
+                "[MP] Missing Resources/" + ChatRoomStateResourcesPath +
+                ".prefab — room chat / system HUD may not work on pure clients.");
+            return;
+        }
+        if (p.GetComponent<NetworkObject>() == null || p.GetComponent<ChatRoomStateSimple>() == null)
+        {
+            Debug.LogError(
+                "[MP] ChatRoomState prefab must have NetworkObject + ChatRoomStateSimple.");
+            return;
+        }
+        if (nm.NetworkConfig.Prefabs.Contains(p))
+            return;
+        nm.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = p });
+        Debug.Log("[MP] Registered chat room state prefab: " + ChatRoomStateResourcesPath);
+    }
+
+    public static void RegisterPublicObjectiveStatePrefab(NetworkManager nm)
+    {
+        if (nm == null || nm.NetworkConfig == null)
+            return;
+        GameObject p = Resources.Load<GameObject>(PublicObjectiveStateResourcesPath);
+        if (p == null)
+        {
+            Debug.LogWarning(
+                "[MP] Missing Resources/" + PublicObjectiveStateResourcesPath +
+                ".prefab — public wave / elite sync may not work on pure clients.");
+            return;
+        }
+        if (p.GetComponent<NetworkObject>() == null || p.GetComponent<PublicObjectiveEventStateSimple>() == null)
+        {
+            Debug.LogError(
+                "[MP] PublicObjectiveState prefab must have NetworkObject + PublicObjectiveEventStateSimple.");
+            return;
+        }
+        if (nm.NetworkConfig.Prefabs.Contains(p))
+            return;
+        nm.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = p });
+        Debug.Log("[MP] Registered public objective state prefab: " + PublicObjectiveStateResourcesPath);
+    }
+
+    /// <summary>队伍运行态同样走服务端 Spawn；若未提前注册 prefab，纯 Client 端可能拿不到 PartyRuntimeState 的 NetworkVariable。</summary>
+    public static void RegisterPartyRuntimeStatePrefab(NetworkManager nm)
+    {
+        if (nm == null || nm.NetworkConfig == null)
+            return;
+        GameObject p = Resources.Load<GameObject>(PartyRuntimeStateResourcesPath);
+        if (p == null)
+        {
+            Debug.LogWarning(
+                "[MP] Missing Resources/" + PartyRuntimeStateResourcesPath +
+                ".prefab — pure clients may not replicate party runtime state.");
+            return;
+        }
+        if (p.GetComponent<NetworkObject>() == null || p.GetComponent<PartyRuntimeStateSimple>() == null)
+        {
+            Debug.LogError(
+                "[MP] PartyRuntimeState prefab must have NetworkObject + PartyRuntimeStateSimple.");
+            return;
+        }
+        if (nm.NetworkConfig.Prefabs.Contains(p))
+            return;
+        nm.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = p });
+        Debug.Log("[MP] Registered party runtime state prefab: " + PartyRuntimeStateResourcesPath);
+    }
+
     public static void RegisterFromSceneSpawners(NetworkManager nm)
     {
         if (nm == null || nm.NetworkConfig == null || nm.NetworkConfig.Prefabs == null)

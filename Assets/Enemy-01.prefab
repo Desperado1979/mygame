@@ -124,7 +124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2847392018
+  GlobalObjectIdHash: 1422025916
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -188,11 +188,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043cef9cdfb9ddf4e99eaea5efc50604, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHp: 10
+  maxHp: 100
   xpOnKill: 8
   goldOnKill: 30
   dropPrefab: {fileID: 5854477858726258427, guid: 744726bd270256d4daf3db77b0f0f3f5,
     type: 3}
+  physicalDefenseOverride: -1
+  spellDefenseOverride: -1
 --- !u!114 &2946148755747556563
 MonoBehaviour:
   m_ObjectHideFlags: 0

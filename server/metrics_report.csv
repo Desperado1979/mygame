@@ -1,0 +1,3 @@
+scope,bucket,playerId,total,accepted,rejected,acceptRate,warnLow,warnHigh,topCodes
+overall,all,all,3,3,0,100,1,0,audit_contains_srvval:1
+day,2026-04-29,all,3,3,0,100,1,0,audit_contains_srvval:1

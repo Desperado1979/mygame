@@ -22,6 +22,22 @@ MonoBehaviour:
   p1WaveHudTag: Wv
   p1WaveHudDone: Done
   p1WaveHudNone: "--"
+  publicObjectiveHudTag: "\u516C\u76EE"
+  publicObjectiveParticipationKey: "\u6001"
+  publicObjectiveInProgress: "\u8FDB\u884C\u4E2D"
+  publicObjectiveSegmentDone: "\u672C\u6BB5\u5DF2\u6E05\u573A"
+  publicObjectiveNoSpawner: "\u65E0"
+  publicObjectiveParticipating: "\u53C2\u4E0E"
+  publicObjectiveObserving: "\u89C2\u6218"
+  publicObjectiveInTown: "\u57CE\u5185"
+  publicObjectiveWaveKey: "\u6CE2"
+  publicObjectiveEliteTag: "\u7CBE"
+  publicObjectiveEliteActive: "\u5728\u573A"
+  publicObjectiveEliteCleared: "\u5DF2\u6E05"
+  publicObjectiveEliteDown: "\u6682\u65E0"
+  publicObjectiveEliteWaveKey: "\u5E8F"
+  publicObjectiveEliteKillKey: "\u8BA1"
+  publicObjectiveEliteDefeatToast: "\u516C\u76EE:\u7CBE\u82F1\u5DF2\u51FB\u8D25 \u5E8F{0} \u8BA1{1}"
   hudTagEnemy: "E"
   hudTagPos: "P"
   hudTagMp: MP
@@ -32,6 +48,8 @@ MonoBehaviour:
   hudTagArea: A
   hudTagPvp: PvP
   hudTagParty: Party
+  hudTagChatRoom: ch
+  hudTagChatSys: sys
   hudTagSkillQ: Q
   hudTagSkillR: R
   hudSkillRdyText: rdy
@@ -42,6 +60,7 @@ MonoBehaviour:
   hudPvpValueOn: On
   hudPvpValueOff: "Off"
   hudPvpRedLabel: Red
+  hudPvpValueSafeBlocked: Safe
   hudTagEq: Eq
   hudTagLv: Lv
   hudTagDiff: 差
@@ -69,6 +88,7 @@ MonoBehaviour:
   hudTagAudC: AudC
   hudTagSyn: syn
   hudTagF2: f2
+  hudTagF2Verdict: f2v
   hudTagEtg: etg
   hudTagD5Dur: d
   hudTagD5Retry: r
@@ -84,8 +104,8 @@ MonoBehaviour:
   hudTagNetAlertSuffix: "!"
   hudHelpTextProgress: "  U升 I点 O解Q2 P解R2 1红 2蓝 B买红 N买蓝 V卖药"
   hudHelpTextBank: "  F5存金 F6取金 F7存药 F8取药"
-  hudHelpTextParty: "  小键盘+/-队伍"
-  hudHelpTextChat: "  Enter本地 `系统"
+  hudHelpTextParty: "  \u5C0F\u952E\u76D8+/-\u961F\u4F0D *\u5207\u6362\u6389\u843D\u5171\u4EAB"
+  hudHelpTextChat: "  Enter\u623F\u95F4 `\u7CFB\u7EDF(H)"
   hudHelpTextKeys: "Keys Esc退出 F1健康 ;审计类 F4审计 F3整包 F2POST F12状态 F9存 F10读 F11清"
   hudHelpTextDeath: "  死亡掉金并复活"
   hudTagPosNA: "N/A"
@@ -145,3 +165,5 @@ MonoBehaviour:
   miniBossHpMultiplier: 3
   bossPhaseHpFraction: 0.5
   bossPhaseChaseSpeedMul: 1.25
+  hudBaiBuLines:
+  - "\u5355\u673a\u73a9\u6cd5\u81ea\u68c0\uff1a\u6253\u602a\u540e\u91d1\u5e01\u548c\u7ecf\u9a8c\u5e94\u6709\u53d8\u5316 \u007c U\u5347\u7ea7 \u007c I\u6280\u80fd\u70b9 \u007c \u5c0f\u952e\u76d81234\u52a0\u56db\u7ef4 \u007c \u63a7\u5236\u53f0\u52ff\u5927\u7247\u7ea2\u9519"

@@ -15,10 +15,25 @@ public class PlayerSkillBurstSimple : MonoBehaviour
     public float skillRadius = 3.2f;
     public int damagePerEnemy = 2;
 
-    [Header("D2-2 — Burn on hit (README §11.1)")]
+    [Header("D2-2 — Burn on hit (README §11.1) — DefaultD3Growth 覆盖")]
     public float burnDurationSeconds = 3.2f;
 
     float cooldownEndTime;
+
+    void Awake()
+    {
+        ApplyD3BurstSkillFromBalance();
+    }
+
+    void ApplyD3BurstSkillFromBalance()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        mpCost = Mathf.Max(1, d.skillBurstMpCost);
+        cooldownSeconds = Mathf.Max(0.1f, d.skillBurstCooldownSec);
+        skillRadius = Mathf.Max(0.1f, d.skillBurstRadius);
+        damagePerEnemy = Mathf.Max(1, d.skillBurstDamagePerHit);
+        burnDurationSeconds = Mathf.Max(0f, d.skillBurstBurnSec);
+    }
 
     void Reset()
     {
@@ -71,18 +86,21 @@ public class PlayerSkillBurstSimple : MonoBehaviour
             mastery.RegisterBurstCast();
 
         int tier = unlocks != null ? unlocks.burstTier : 1;
-        float tierDamageMul = tier >= 2 ? 1.35f : 1f;
-        float tierRangeMul = tier >= 2 ? 1.15f : 1f;
+        D3GrowthBalanceData d3b = D3GrowthBalance.Load();
         float dmgMult = mastery != null ? mastery.BurstDamageMultiplier : 1f;
-        int rolledDamage = Mathf.Max(1, Mathf.RoundToInt(damagePerEnemy * dmgMult * tierDamageMul));
+        PlayerStatsSimple stBurst = GetComponent<PlayerStatsSimple>();
+        int intelBurst = stBurst != null ? stBurst.intellect : d3b.startingInt;
+        int rolledDamage = D3GrowthBalance.ComputeBurstRolledDamage(
+            d3b, damagePerEnemy, intelBurst, dmgMult, tier);
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, skillRadius * tierRangeMul, enemyLayer);
+        float overlapR = D3GrowthBalance.ComputeBurstOverlapRadius(d3b, skillRadius, tier);
+        Collider[] hits = Physics.OverlapSphere(transform.position, overlapR, enemyLayer);
         int damaged = 0;
         for (int i = 0; i < hits.Length; i++)
         {
             EnemyHealthSimple enemy = hits[i].GetComponent<EnemyHealthSimple>();
             if (enemy == null) continue;
-            enemy.TakeHit(rolledDamage, transform.position, gameObject);
+            enemy.TakeSpellHit(rolledDamage, transform.position, gameObject);
             damaged++;
 
             MonsterP1A1Mark p1 = hits[i].GetComponent<MonsterP1A1Mark>();
@@ -101,7 +119,12 @@ public class PlayerSkillBurstSimple : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
+        if (unlocks == null)
+            unlocks = GetComponent<PlayerSkillUnlockSimple>();
+        int tier = unlocks != null ? unlocks.burstTier : 1;
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        float r = D3GrowthBalance.ComputeBurstOverlapRadius(d, skillRadius, tier);
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, skillRadius);
+        Gizmos.DrawWireSphere(transform.position, r);
     }
 }

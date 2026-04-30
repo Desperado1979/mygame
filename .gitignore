@@ -42,4 +42,8 @@ sysinfo.txt
 
 # Unity upgrade log (local)
 UpgradeLog.htm
-
+# 第三方资源包 - 需单独安装
+/Assets/3D Cartoon Village/
+/Assets/Mori_motionAsset/
+/Assets/Stylized3DMonster/
+/Assets/DoubleL/

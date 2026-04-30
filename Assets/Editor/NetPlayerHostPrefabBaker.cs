@@ -31,5 +31,28 @@ public static class NetPlayerHostPrefabBaker
         EditorGUIUtility.PingObject(prefab);
         Debug.Log("[MP] Baked Net Player prefab: " + PrefabAssetPath + " (Resources load path: " + NetPlayerHostFactory.ResourcesPath + ")");
     }
+
+    public static bool EnsureBakedPrefabReady(bool autoBakeIfMissingOrInvalid)
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabAssetPath);
+        bool ready = IsValidNetPlayerHostPrefab(prefab);
+        if (ready || !autoBakeIfMissingOrInvalid)
+            return ready;
+
+        BakeNetPlayerHostPrefab();
+        prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabAssetPath);
+        return IsValidNetPlayerHostPrefab(prefab);
+    }
+
+    static bool IsValidNetPlayerHostPrefab(GameObject prefab)
+    {
+        if (prefab == null)
+            return false;
+        if (prefab.GetComponent<Unity.Netcode.NetworkObject>() == null)
+            return false;
+        if (prefab.GetComponent<MultiplayerPlayerSimple>() == null)
+            return false;
+        return true;
+    }
 }
 #endif

@@ -46,9 +46,10 @@ public static class NetPlayerHostFactory
         MultiplayerPlayerSimple mps = player.GetComponent<MultiplayerPlayerSimple>();
         if (mps == null)
             mps = player.AddComponent<MultiplayerPlayerSimple>();
-        mps.moveSpeed = 6f;
-        mps.attackRange = 2.4f;
-        mps.damagePerHit = 1;
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        mps.moveSpeed = Mathf.Max(0.1f, d.playerNetMoveSpeed);
+        mps.attackRange = Mathf.Max(0.1f, d.playerMeleeAttackRangeNet);
+        mps.damagePerHit = D3GrowthBalance.ComputeMeleePhysicalDamage(d, d.startingStr);
 
         if (player.GetComponent<PlayerHotkeysSimple>() == null)
             player.AddComponent<PlayerHotkeysSimple>();
@@ -81,6 +82,14 @@ public static class NetPlayerHostFactory
             player.AddComponent<PlayerSaveSimple>();
         if (player.GetComponent<PlayerFloatingBarsSimple>() == null)
             player.AddComponent<PlayerFloatingBarsSimple>();
+        if (player.GetComponent<PartyPlaceholderSimple>() == null)
+            player.AddComponent<PartyPlaceholderSimple>();
+        if (player.GetComponent<ChatPlaceholderSimple>() == null)
+            player.AddComponent<ChatPlaceholderSimple>();
+        if (player.GetComponent<PlayerAreaStateSimple>() == null)
+            player.AddComponent<PlayerAreaStateSimple>();
+        if (player.GetComponent<PlayerPvpSimple>() == null)
+            player.AddComponent<PlayerPvpSimple>();
 
         ConfigureRuntimeSkillEnemyLayer(player);
 
@@ -106,6 +115,16 @@ public static class NetPlayerHostFactory
             frost.enemyLayer = enemyMask;
     }
 
+    /// <summary>烘焙预制体在编辑模式调用链里必须用 Immediate；Play 内仍用 Destroy 推迟销毁。</summary>
+    static void DestroyEditOrPlay(UnityEngine.Object obj)
+    {
+        if (obj == null) return;
+        if (Application.isPlaying)
+            UnityEngine.Object.Destroy(obj);
+        else
+            UnityEngine.Object.DestroyImmediate(obj);
+    }
+
     static void BuildSimpleHumanoidVisual(Transform root)
     {
         GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -114,7 +133,7 @@ public static class NetPlayerHostFactory
         body.transform.localPosition = new Vector3(0f, 0.95f, 0f);
         body.transform.localScale = new Vector3(0.55f, 0.9f, 0.35f);
         Collider bodyCol = body.GetComponent<Collider>();
-        if (bodyCol != null) UnityEngine.Object.Destroy(bodyCol);
+        if (bodyCol != null) DestroyEditOrPlay(bodyCol);
 
         GameObject head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         head.name = "HeadVisual";
@@ -122,7 +141,7 @@ public static class NetPlayerHostFactory
         head.transform.localPosition = new Vector3(0f, 1.62f, 0f);
         head.transform.localScale = Vector3.one * 0.34f;
         Collider headCol = head.GetComponent<Collider>();
-        if (headCol != null) UnityEngine.Object.Destroy(headCol);
+        if (headCol != null) DestroyEditOrPlay(headCol);
 
         GameObject arm = GameObject.CreatePrimitive(PrimitiveType.Cube);
         arm.name = "ArmMarker";
@@ -130,7 +149,7 @@ public static class NetPlayerHostFactory
         arm.transform.localPosition = new Vector3(0.28f, 1.02f, 0f);
         arm.transform.localScale = new Vector3(0.14f, 0.45f, 0.14f);
         Collider armCol = arm.GetComponent<Collider>();
-        if (armCol != null) UnityEngine.Object.Destroy(armCol);
+        if (armCol != null) DestroyEditOrPlay(armCol);
 
         SetColor(body, new Color(0.20f, 0.45f, 0.90f, 1f));
         SetColor(head, new Color(0.95f, 0.80f, 0.68f, 1f));

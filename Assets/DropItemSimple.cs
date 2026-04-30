@@ -10,10 +10,13 @@ public class DropItemSimple : NetworkBehaviour
     public string pickupId = GameItemIdsSimple.Shard;
     [Tooltip("本次拾取增加数量")]
     public int pickupCount = 1;
-    [Header("Auto random type")]
+    [Header("Auto random type（运行时由 DefaultD3Growth 的 dropRollWeight* 驱动；Inspector 为离线预览兜底）")]
     public bool randomTypeOnSpawn = true;
+    [Tooltip("预览/无表兜底；真随机在 AssignRandomType 中读 D3。")]
     public int weightPotion = 40;
+    [Tooltip("预览/无表兜底")]
     public int weightMana = 35;
+    [Tooltip("预览/无表兜底")]
     public int weightShard = 25;
 
     [Header("Drop ownership protection")]
@@ -47,6 +50,7 @@ public class DropItemSimple : NetworkBehaviour
 
         if (IsServer)
         {
+            ApplyPickupWeightFromD3();
             netPickupId.Value = new FixedString64Bytes(GameItemIdsSimple.Normalize(pickupId));
             netPickupCount.Value = Mathf.Max(1, pickupCount);
             netPickupWeight.Value = Mathf.Max(0.01f, pickupWeight);
@@ -105,6 +109,7 @@ public class DropItemSimple : NetworkBehaviour
     {
         if (randomTypeOnSpawn && ShouldRandomizeOnEnable())
             AssignRandomType();
+        ApplyPickupWeightFromD3();
         destroyAtTime = Time.time + Mathf.Max(1f, lifetimeSeconds);
         meshRenderer = GetComponentInChildren<MeshRenderer>();
         if (meshRenderer != null && meshRenderer.material != null)
@@ -162,9 +167,16 @@ public class DropItemSimple : NetworkBehaviour
 
     void AssignRandomType()
     {
-        int wHp = Mathf.Max(0, weightPotion);
-        int wMp = Mathf.Max(0, weightMana);
-        int wShard = Mathf.Max(0, weightShard);
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        int wHp = Mathf.Max(0, d.dropRollWeightHp);
+        int wMp = Mathf.Max(0, d.dropRollWeightMp);
+        int wShard = Mathf.Max(0, d.dropRollWeightShard);
+        if (wHp + wMp + wShard <= 0)
+        {
+            wHp = Mathf.Max(0, weightPotion);
+            wMp = Mathf.Max(0, weightMana);
+            wShard = Mathf.Max(0, weightShard);
+        }
         int sum = wHp + wMp + wShard;
         if (sum <= 0)
         {
@@ -179,6 +191,18 @@ public class DropItemSimple : NetworkBehaviour
 
         if (IsServer && IsSpawned)
             netPickupId.Value = new FixedString64Bytes(GameItemIdsSimple.Normalize(pickupId));
+    }
+
+    void ApplyPickupWeightFromD3()
+    {
+        D3GrowthBalanceData d3 = D3GrowthBalance.Load();
+        pickupId = GameItemIdsSimple.Normalize(pickupId);
+        if (pickupId == GameItemIdsSimple.HpPotion || pickupId == GameItemIdsSimple.MpPotion)
+            pickupWeight = Mathf.Max(0.01f, d3.potionUnitWeight);
+        else if (pickupId == GameItemIdsSimple.Shard)
+            pickupWeight = Mathf.Max(0.01f, d3.shardUnitWeight);
+        else
+            pickupWeight = Mathf.Max(0.01f, d3.lootDefaultUnitWeight);
     }
 
     void EnsureLabel()

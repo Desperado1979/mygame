@@ -2,16 +2,25 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// Minimal shared party state for playtests.
+/// Minimal shared party state for playtests (B2·Day3：全端同显人数与掉落共享开关)。
 /// Works in NGO sessions and falls back gracefully in single-player.
 /// </summary>
 public class PartyRuntimeStateSimple : NetworkBehaviour
 {
     public static PartyRuntimeStateSimple Instance { get; private set; }
 
+    /// <summary>与 <c>DefaultD3Growth.partyMaxMembers</c> 对齐；服端硬上限。</summary>
+    public static int DefaultMaxPartyMembers => Mathf.Max(1, D3GrowthBalance.Load().partyMaxMembers);
+
     readonly NetworkVariable<int> memberCount = new NetworkVariable<int>(1);
+    readonly NetworkVariable<bool> shareDropWithParty = new NetworkVariable<bool>(
+        true,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
 
     public int MemberCount => Mathf.Max(1, memberCount.Value);
+
+    public bool ShareDropWithParty => shareDropWithParty.Value;
 
     void Awake()
     {
@@ -54,7 +63,23 @@ public class PartyRuntimeStateSimple : NetworkBehaviour
     {
         if (!IsServer)
             return;
-        memberCount.Value = Mathf.Max(1, count);
+        memberCount.Value = Mathf.Clamp(count, 1, DefaultMaxPartyMembers);
+    }
+
+    public void RequestToggleShareDrop()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            return;
+        if (IsServer)
+            shareDropWithParty.Value = !shareDropWithParty.Value;
+        else
+            ToggleShareDropServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    void ToggleShareDropServerRpc()
+    {
+        shareDropWithParty.Value = !shareDropWithParty.Value;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -71,7 +96,9 @@ public class PartyRuntimeStateSimple : NetworkBehaviour
 
     void ApplyAddMember()
     {
-        memberCount.Value = Mathf.Max(1, memberCount.Value + 1);
+        if (memberCount.Value >= DefaultMaxPartyMembers)
+            return;
+        memberCount.Value = memberCount.Value + 1;
     }
 
     void ApplyRemoveMember()

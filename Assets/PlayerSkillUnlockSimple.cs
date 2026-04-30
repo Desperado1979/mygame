@@ -13,6 +13,18 @@ public class PlayerSkillUnlockSimple : MonoBehaviour
     public int burstTier2Cost = 2;
     public int frostTier2Cost = 2;
 
+    void Awake()
+    {
+        ApplyD3UnlockCostsFromBalance();
+    }
+
+    void ApplyD3UnlockCostsFromBalance()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        burstTier2Cost = Mathf.Max(1, d.burstTier2SpCost);
+        frostTier2Cost = Mathf.Max(1, d.frostTier2SpCost);
+    }
+
     void Reset()
     {
         progress = GetComponent<PlayerProgressSimple>();

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-/// <summary>D4 kickoff: local party placeholder (fake members).</summary>
+/// <summary>D4 / B2·Day3：队伍占位 — 人数与掉落共享与 <see cref="PartyRuntimeStateSimple"/> 对齐（ NGO 全端一致）。</summary>
 public class PartyPlaceholderSimple : MonoBehaviour
 {
     public int partySize = 1;
@@ -8,10 +8,32 @@ public class PartyPlaceholderSimple : MonoBehaviour
     public bool shareDropWithParty = true;
     public KeyCode addMemberKey = KeyCode.KeypadPlus;
     public KeyCode removeMemberKey = KeyCode.KeypadMinus;
+    [Tooltip("切换 Drop Share/Solo（仅本地操控体；联网时写服端 NetworkVariable）")]
+    public KeyCode toggleShareDropKey = KeyCode.KeypadMultiply;
+
+    void Awake()
+    {
+        maxPartySize = Mathf.Max(1, D3GrowthBalance.Load().partyMaxMembers);
+    }
 
     void Update()
     {
         SyncFromRuntimeState();
+        // Host 上会同时存在「本地玩家」与「远端玩家的代理体」；两者都挂本组件时会各读一次键盘 → +2/-2。仅本地操控体处理按键。
+        MultiplayerPlayerSimple net = GetComponent<MultiplayerPlayerSimple>();
+        if (net != null && net.IsSpawned && !net.IsOwner)
+            return;
+        // 本机双开两 exe 且都可能收到输入时，仅前台窗口处理（与 IsOwner 叠加）。
+        if (!Application.isFocused)
+            return;
+        if (Input.GetKeyDown(toggleShareDropKey))
+        {
+            PartyRuntimeStateSimple stShare = PartyRuntimeStateSimple.Instance;
+            if (stShare != null)
+                stShare.RequestToggleShareDrop();
+            else
+                shareDropWithParty = !shareDropWithParty;
+        }
         if (Input.GetKeyDown(addMemberKey))
         {
             if (partySize >= maxPartySize)
@@ -33,11 +55,14 @@ public class PartyPlaceholderSimple : MonoBehaviour
         PartyRuntimeStateSimple st = PartyRuntimeStateSimple.Instance;
         if (st == null)
         {
+            if (partySize >= maxPartySize)
+                return false;
             partySize++;
             return true;
         }
 
-        if (st.MemberCount >= maxPartySize)
+        int cap = Mathf.Min(maxPartySize, PartyRuntimeStateSimple.DefaultMaxPartyMembers);
+        if (st.MemberCount >= cap)
             return false;
 
         st.RequestAddMember();
@@ -64,6 +89,12 @@ public class PartyPlaceholderSimple : MonoBehaviour
     {
         PartyRuntimeStateSimple st = PartyRuntimeStateSimple.Instance;
         if (st != null)
-            partySize = Mathf.Clamp(st.MemberCount, 1, Mathf.Max(1, maxPartySize));
+        {
+            partySize = Mathf.Clamp(
+                st.MemberCount,
+                1,
+                Mathf.Min(maxPartySize, PartyRuntimeStateSimple.DefaultMaxPartyMembers));
+            shareDropWithParty = st.ShareDropWithParty;
+        }
     }
 }

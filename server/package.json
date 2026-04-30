@@ -44,7 +44,7 @@
     "check-locale-ci": "node tools/check_locale_placeholder.cjs",
     "metrics-archive": "node tools/metrics_archive_lines.cjs",
     "validate-patch-rehearsal": "node tools/patch_validate_rehearsal.cjs --smoke",
-    "check-syntax": "node --check tools/persist_sync.cjs && node --check tools/audit_validate.cjs && node --check tools/schema_validate.cjs && node --check tools/patch_validate_rehearsal.cjs"
+    "check-syntax": "node --check tools/persist_sync.cjs && node --check tools/audit_validate.cjs && node --check tools/schema_validate.cjs && node --check tools/patch_validate_rehearsal.cjs && node --check tools/health_check.cjs && node --check tools/validate_sync_file.cjs && node --check tools/compare_state_export.cjs"
   },
   "keywords": [],
   "author": "",

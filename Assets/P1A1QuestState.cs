@@ -79,6 +79,9 @@ public class P1AContentConfig : ScriptableObject
         return _cachedDefault;
     }
 
+    /// <summary>清静态缓存；进入 Play 前调用可避免「快速进 Play」仍持旧版 Resources 资产（如刚修改 hudBaiBuLines）。</summary>
+    public static void ClearDefaultCache() => _cachedDefault = null;
+
     [Header("P1-A-1 验收")]
     [Min(1)] public int p1TargetKills = 5;
     [Tooltip("有 contentConfig 时由表覆盖；用于 HUD 的 R 冰 / Q 火顺序提示行。")]
@@ -102,6 +105,32 @@ public class P1AContentConfig : ScriptableObject
     [Tooltip("无波次组件时的尾字，如 --。")]
     public string p1WaveHudNone = "--";
 
+    [Header("B2 / Day1 — 公共目标（HUD、勿与 p1HudTag 任务行混用）")]
+    [Tooltip("公共目标行主标签。如 公目")] public string publicObjectiveHudTag = "公目";
+    [Tooltip("参与态键。如 态")] public string publicObjectiveParticipationKey = "态";
+    [Tooltip("波次表尚未全清。如 进行中")] public string publicObjectiveInProgress = "进行中";
+    [Tooltip("波次表已全清且未循环。如 本段已清场")] public string publicObjectiveSegmentDone = "本段已清场";
+    [Tooltip("无 WaveSpawner 时。如 无")] public string publicObjectiveNoSpawner = "无";
+    [Tooltip("在参与圈内且于野外。如 参与")] public string publicObjectiveParticipating = "参与";
+    [Tooltip("于野外但不在参与圈内。如 观战")] public string publicObjectiveObserving = "观战";
+    [Tooltip("在城镇/安全区（不计入参与圈收益态展示）。如 城内")] public string publicObjectiveInTown = "城内";
+    [Tooltip("行内 波次 段标签，与 Party/坐标 区分。如 波 或 Wv")] public string publicObjectiveWaveKey = "波";
+    [Tooltip("精英 小标题。如 精")] public string publicObjectiveEliteTag = "精";
+    [Tooltip("公共精英已刷新。如 在场")] public string publicObjectiveEliteActive = "在场";
+    [Tooltip("累计已击败>0 且当前无在场精英。观战/远处也能看出本段已清。如 已清")] public string publicObjectiveEliteCleared = "已清";
+    [Tooltip("从未产生过本段公共精英事件（计为 0）且无在场。如 暂无")] public string publicObjectiveEliteDown = "暂无";
+    [Tooltip("精英事件 波序号。如 序")] public string publicObjectiveEliteWaveKey = "序";
+    [Tooltip("累计击败数。如 计")] public string publicObjectiveEliteKillKey = "计";
+    [Tooltip("B2·Day2：公共精英被击败时全端短提示。{0}=波序号，{1}=累计击败数。")]
+    public string publicObjectiveEliteDefeatToast = "公目:精英已击败 序{0} 计{1}";
+
+    [Header("B2 / Day1 — 公共目标世界提示（场景刷怪中心上方 · [Client-Side Expression]）")]
+    [Tooltip("为 true 时由 WaveSpawner 自动挂 PublicObjectiveWorldHintSimple；纯表现。")]
+    public bool publicObjectiveWorldHintEnabled = true;
+    public float publicObjectiveWorldHintCenterYOffset = 3.5f;
+    public Vector3 publicObjectiveWorldHintScale = new Vector3(0.014f, 0.014f, 0.014f);
+    [Range(18, 96)] public int publicObjectiveWorldHintFontSize = 44;
+
     [Header("DebugHud 行首标签（十项，可本地化）")]
     [Tooltip("① 敌人数前缀，如 E")] public string hudTagEnemy = "E";
     [Tooltip("② 坐标前缀，如 P")] public string hudTagPos = "P";
@@ -113,6 +142,8 @@ public class P1AContentConfig : ScriptableObject
     [Tooltip("⑧ 区域前缀，如 A")] public string hudTagArea = "A";
     [Tooltip("⑨ PvP 前缀，如 PvP")] public string hudTagPvp = "PvP";
     [Tooltip("⑩ 队伍前缀，如 Party")] public string hudTagParty = "Party";
+    [Tooltip("B2·Day4 房间聊天摘要前缀，如 ch")] public string hudTagChatRoom = "ch";
+    [Tooltip("B2·Day4 系统消息摘要前缀，如 sys")] public string hudTagChatSys = "sys";
 
     [Header("DebugHud 第二组（十项 · Q/R、Drop、PvP 值）")]
     [Tooltip("⑪ 技能 Q 行标签")] public string hudTagSkillQ = "Q";
@@ -125,6 +156,7 @@ public class P1AContentConfig : ScriptableObject
     [Tooltip("⑱ PvP 开状态字，如 On")] public string hudPvpValueOn = "On";
     [Tooltip("⑲ PvP 关状态字，如 Off")] public string hudPvpValueOff = "Off";
     [Tooltip("⑳ 红名括注，如 Red → (Red)")] public string hudPvpRedLabel = "Red";
+    [Tooltip("Day5：在安全区/城内时 Off 的附注，如 Safe")] public string hudPvpValueSafeBlocked = "Safe";
 
     [Header("DebugHud 第三组（十项 · 装备/成长/背包/金·BG）")]
     [Tooltip("㉑ 装等测试，如 Eq")] public string hudTagEq = "Eq";
@@ -158,6 +190,7 @@ public class P1AContentConfig : ScriptableObject
     [Tooltip("㊺ AudC 审计类")] public string hudTagAudC = "AudC";
     [Tooltip("㊻ syn POST 状态")] public string hudTagSyn = "syn";
     [Tooltip("㊼ f2 末次 HTTP 码")] public string hudTagF2 = "f2";
+    [Tooltip("D5 一键验收结论（pass/warn/retry/fail/idle）")] public string hudTagF2Verdict = "f2v";
     [Tooltip("㊽ etg 预取")] public string hudTagEtg = "etg";
     [Tooltip("㊾ d 耗时 ms")] public string hudTagD5Dur = "d";
     [Tooltip("㊿ r 重试次数")] public string hudTagD5Retry = "r";
@@ -177,8 +210,8 @@ public class P1AContentConfig : ScriptableObject
     [Header("DebugHud 第七组（十项 · 帮助整段 / 无坐标 / SrvVal 内外围字 / 百分号）")]
     [TextArea(1, 3)] [Tooltip("A11-① 升级/购药 提示整段（showDebugDetails）")] public string hudHelpTextProgress = "  U升 I点 O解Q2 P解R2 1红 2蓝 B买红 N买蓝 V卖药";
     [TextArea(1, 3)] [Tooltip("A11-② 金库 F5～F8 整段")] public string hudHelpTextBank = "  F5存金 F6取金 F7存药 F8取药";
-    [TextArea(1, 2)] [Tooltip("A11-③ 队伍小键盘 整段")] public string hudHelpTextParty = "  小键盘+/-队伍";
-    [TextArea(1, 2)] [Tooltip("A11-④ 回车聊天 整段")] public string hudHelpTextChat = "  Enter本地 `系统";
+    [TextArea(1, 2)] [Tooltip("A11-③ 队伍小键盘 整段（Day3：* 切换掉落共享）")] public string hudHelpTextParty = "  小键盘+/-队伍 *切换掉落共享";
+    [TextArea(1, 2)] [Tooltip("A11-④ 回车=` 房间；` = 系统（仅 Host）")] public string hudHelpTextChat = "  Enter房间 `系统(H)";
     [TextArea(1, 4)] [Tooltip("A11-⑤ 热键 Keys 行（前换行在代码中）")] public string hudHelpTextKeys = "Keys Esc退出 F1健康 ;审计类 F4审计 F3整包 F2POST F12状态 F9存 F10读 F11清";
     [TextArea(1, 2)] [Tooltip("A11-⑥ 死亡提示 整段")] public string hudHelpTextDeath = "  死亡掉金并复活";
     [Tooltip("A11-⑦ 无玩家时 P: 后占位")] public string hudTagPosNA = "N/A";

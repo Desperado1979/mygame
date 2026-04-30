@@ -11,11 +11,23 @@ public class PlayerWalletSimple : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
+            bool thisNet = GetComponent<MultiplayerPlayerSimple>() != null;
+            bool instNet = Instance.GetComponent<MultiplayerPlayerSimple>() != null;
+            if (thisNet && !instNet)
+                return;
+
             Debug.LogWarning("Multiple PlayerWalletSimple — keeping first.");
             return;
         }
 
         Instance = this;
+        ApplyStartingGoldFromD3();
+    }
+
+    void ApplyStartingGoldFromD3()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        gold = Mathf.Max(0, d.startingGold);
     }
 
     void OnDestroy()

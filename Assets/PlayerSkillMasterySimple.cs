@@ -6,7 +6,7 @@ public class PlayerSkillMasterySimple : MonoBehaviour
     [Range(1, 10)] public int burstSkillLevel = 1;
     public int burstCastsThisLevel;
 
-    [Tooltip("从当前 burstSkillLevel 升到下一级所需施放次数")]
+    [Tooltip("从当前 burstSkillLevel 升到下一级所需施放次数（DefaultD3Growth 覆盖）")]
     public int burstCastsBase = 5;
     public int burstCastsPerLevel = 3;
 
@@ -33,14 +33,35 @@ public class PlayerSkillMasterySimple : MonoBehaviour
         Debug.Log($"Burst skill Lv.{burstSkillLevel}");
     }
 
-    /// <summary>Damage = Base × (1 + (Lv-1) × Scale)，Scale 占位。</summary>
-    public float BurstDamageMultiplier => 1f + (burstSkillLevel - 1) * 0.08f;
+    /// <summary>Damage = Base × (1 + (Lv-1) × Scale)（Scale 由 DefaultD3Growth 写 <c>burstDamageScalePerLevel</c>）。</summary>
+    public float BurstDamageMultiplier => 1f + (burstSkillLevel - 1) * burstDamageScalePerLevel;
 
-    [Header("Frost (R) — cast mastery")]
+    [Header("Frost (R) — cast mastery（DefaultD3Growth 覆盖）")]
     [Range(1, 10)] public int frostSkillLevel = 1;
     public int frostCastsThisLevel;
     public int frostCastsBase = 5;
     public int frostCastsPerLevel = 3;
+
+    [Tooltip("README §4.3：每 Q 技能等级对伤害乘子边率")]
+    public float burstDamageScalePerLevel = 0.08f;
+    [Tooltip("每 R 技能等级对冰冻时长乘子边率")]
+    public float frostFreezeScalePerLevel = 0.06f;
+
+    void Awake()
+    {
+        ApplyD3MasteryFromBalance();
+    }
+
+    void ApplyD3MasteryFromBalance()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        burstCastsBase = Mathf.Max(1, d.masteryBurstCastsBase);
+        burstCastsPerLevel = Mathf.Max(0, d.masteryBurstCastsPerLevel);
+        frostCastsBase = Mathf.Max(1, d.masteryFrostCastsBase);
+        frostCastsPerLevel = Mathf.Max(0, d.masteryFrostCastsPerLevel);
+        burstDamageScalePerLevel = Mathf.Max(0f, d.masteryBurstDmgPerSkillLevel);
+        frostFreezeScalePerLevel = Mathf.Max(0f, d.masteryFrostFreezePerSkillLevel);
+    }
 
     public int FrostCastsNeededForNextLevel()
     {
@@ -65,5 +86,5 @@ public class PlayerSkillMasterySimple : MonoBehaviour
         Debug.Log($"Frost skill Lv.{frostSkillLevel}");
     }
 
-    public float FrostFreezeDurationMultiplier => 1f + (frostSkillLevel - 1) * 0.06f;
+    public float FrostFreezeDurationMultiplier => 1f + (frostSkillLevel - 1) * frostFreezeScalePerLevel;
 }

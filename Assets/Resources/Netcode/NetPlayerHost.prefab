@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1661116411487491605}
   - component: {fileID: 7534585918870147021}
-  - component: {fileID: 6620118020820221715}
   - component: {fileID: 3715481096900689863}
   m_Layer: 0
   m_Name: HeadVisual
@@ -42,27 +41,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 190815945873559144}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!135 &6620118020820221715
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 190815945873559144}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &3715481096900689863
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -115,7 +93,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3825060446488978312}
   - component: {fileID: 5837207026982892998}
-  - component: {fileID: 2626045483131138641}
   - component: {fileID: 4914995963196541708}
   m_Layer: 0
   m_Name: BodyVisual
@@ -147,27 +124,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3379746612963461817}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!65 &2626045483131138641
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3379746612963461817}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &4914995963196541708
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -220,7 +176,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4241498388896996180}
   - component: {fileID: 8611965332831508669}
-  - component: {fileID: 5603701085063702757}
   - component: {fileID: 1413358446075155386}
   m_Layer: 0
   m_Name: ArmMarker
@@ -252,27 +207,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7393784896703821271}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!65 &5603701085063702757
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7393784896703821271}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1413358446075155386
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -345,6 +279,10 @@ GameObject:
   - component: {fileID: 2282479599798186882}
   - component: {fileID: 5914307457558992729}
   - component: {fileID: 7211160116366825224}
+  - component: {fileID: 7211160116366825225}
+  - component: {fileID: 904512778110223344}
+  - component: {fileID: 904512778110223345}
+  - component: {fileID: 904512778110223346}
   m_Layer: 0
   m_Name: NetPlayerHost
   m_TagString: Untagged
@@ -455,7 +393,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3802671675
+  GlobalObjectIdHash: 247666306
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -509,7 +447,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 6
   attackRange: 2.4
-  damagePerHit: 1
+  damagePerHit: 30
 --- !u!114 &320026146120003780
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -531,6 +469,7 @@ MonoBehaviour:
   buyHpPotion: 98
   buyMpPotion: 110
   sellPotion: 118
+  discardJunk: 99
   enhance: 116
   bankDepositGold: 286
   bankWithdrawGold: 287
@@ -548,6 +487,10 @@ MonoBehaviour:
   metricsDashboard: 93
   metricsAuditCategories: 59
   probeServerHealth: 282
+  d3AddStr: 257
+  d3AddAgi: 258
+  d3AddInt: 259
+  d3AddVit: 260
   metricsAlertsPlayersAlt: 106
   metricsDashboardAlt: 108
   probeServerHealthAlt: 48
@@ -591,6 +534,8 @@ MonoBehaviour:
   frostCastsThisLevel: 0
   frostCastsBase: 5
   frostCastsPerLevel: 3
+  burstDamageScalePerLevel: 0.08
+  frostFreezeScalePerLevel: 0.06
 --- !u!114 &827368898468123456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -640,6 +585,7 @@ MonoBehaviour:
   cooldownSeconds: 3.5
   skillRadius: 2.8
   freezeDurationSeconds: 2.2
+  frostDamagePerEnemy: 0
 --- !u!114 &1312552038865891893
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -674,7 +620,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxMp: 100
-  mpRegenPerSecond: 8
+  mpRegenPerSecond: 1.2
 --- !u!114 &657893401088115931
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -691,8 +637,6 @@ MonoBehaviour:
   xpIntoCurrentLevel: 0
   xpBank: 0
   skillUnlockPoints: 0
-  xpBasePerLevel: 40
-  xpExtraPerLevelStep: 14
 --- !u!114 &4534301095961902443
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -827,3 +771,70 @@ MonoBehaviour:
   lowHpFlashSpeed: 8
   uiRefreshInterval: 0.08
   canvasSortingOrder: 120
+--- !u!114 &7211160116366825225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9133808915131601034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a37f38d6802d75042b4b03955e379216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  partySize: 1
+  maxPartySize: 5
+  shareDropWithParty: 1
+  addMemberKey: 270
+  removeMemberKey: 269
+  toggleShareDropKey: 268
+--- !u!114 &904512778110223344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9133808915131601034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b311d8b103978845a080cc974002a3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sendLocalKey: 13
+  sendSystemKey: 96
+  localMessage: Hello room
+  systemMessage: System notice
+  lastLocalSent: 
+  lastSystemSent: 
+--- !u!114 &904512778110223345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9133808915131601034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cacae53553eb7f499e05f4fa00a5fab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zoneConfig: {fileID: 0}
+  cityCenter: {fileID: 0}
+  cityRadius: 16
+  currentArea: Field
+--- !u!114 &904512778110223346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9133808915131601034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 223ea48e4d3acf248b132be2d571de60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pvpEnabled: 0
+  pvpKills: 0
+  togglePvpKey: 107

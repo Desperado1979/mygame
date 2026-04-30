@@ -1,0 +1,6 @@
+<linker>
+  <!-- Resources.Load(ScriptableObject) / JsonUtility 路径：防止 IL2CPP 裁剪导致独立包装备表或数值解析异常 -->
+  <assembly fullname="Assembly-CSharp">
+    <type fullname="EquipmentDataSimple" preserve="all"/>
+  </assembly>
+</linker>

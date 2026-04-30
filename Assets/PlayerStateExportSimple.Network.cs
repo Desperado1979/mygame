@@ -7,8 +7,9 @@ using UnityEngine.Networking;
 
 public partial class PlayerStateExportSimple
 {
-    const int MaxSyncPostAttempts = 2;
     const string EtagPrefsPrefix = "EOD_SYNC_ETAG_";
+
+    static int MaxSyncPostAttempts => Mathf.Clamp(D3GrowthBalance.Load().d5SyncPostMaxAttempts, 1, 8);
 
     static string PrefsKeyForPlayerEtag(string playerId)
     {
@@ -127,7 +128,7 @@ public partial class PlayerStateExportSimple
                 {
                     LastSyncRetryCount = attempt;
                     string ra = req.GetResponseHeader("Retry-After");
-                    float waitSec = 2f;
+                    float waitSec = Mathf.Clamp(D3GrowthBalance.Load().d5SyncPost429DefaultWaitSec, 1f, 60f);
                     if (int.TryParse(ra, out int sec)) waitSec = Mathf.Clamp(sec, 1, 60);
                     Debug.LogWarning($"POST /sync 429, retry after {waitSec}s (attempt {attempt}/{MaxSyncPostAttempts})");
                     yield return new WaitForSeconds(waitSec);

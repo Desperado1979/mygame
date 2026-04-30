@@ -7,4 +7,9 @@ public class WorldZoneConfigSimple : MonoBehaviour
     public float cityRadius = 16f;
     public Transform citySpawnPoint;
     public Transform fieldSpawnPoint;
+
+    void Awake()
+    {
+        cityRadius = Mathf.Max(0.5f, D3GrowthBalance.Load().worldCityRadiusDefault);
+    }
 }

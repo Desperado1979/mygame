@@ -14,6 +14,7 @@ public class SafeZoneSimple : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        radius = Mathf.Max(0.5f, D3GrowthBalance.Load().safeZoneDefaultRadius);
         SyncFromConfig();
     }
 

@@ -38,6 +38,7 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
 
     void Awake()
     {
+        ApplyBurnDotDefaultsFromD3();
         _health = GetComponent<EnemyHealthSimple>();
         body = GetComponent<Rigidbody>();
         meshRenderer = GetComponentInChildren<MeshRenderer>();
@@ -46,6 +47,13 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
             originalColor = meshRenderer.material.color;
             cachedColor = true;
         }
+    }
+
+    void ApplyBurnDotDefaultsFromD3()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        burnDamagePerTick = Mathf.Max(1, d.skillBurstBurnDamagePerTick);
+        burnTickInterval = Mathf.Max(0.05f, d.skillBurstBurnTickIntervalSec);
     }
 
     void OnEnable()
@@ -100,7 +108,7 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
             return;
 
         if (_health != null)
-            _health.TakeHit(burnDamagePerTick);
+            _health.TakeSpellHit(burnDamagePerTick);
 
         nextBurnTickTime = t + burnTickInterval;
     }
@@ -164,9 +172,6 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
     public string GetHudSummary()
     {
         float t = SimTime;
-        if (t >= burnEndTime && t >= freezeEndTime)
-            return "";
-
         P1AContentConfig cfg = P1AContentConfig.TryLoadDefault();
         string burnL = (cfg != null && !string.IsNullOrWhiteSpace(cfg.hudVfxBurnLabel)) ? cfg.hudVfxBurnLabel.Trim() : "燃";
         string iceL = (cfg != null && !string.IsNullOrWhiteSpace(cfg.hudVfxFrostLabel)) ? cfg.hudVfxFrostLabel.Trim() : "冰";
@@ -175,11 +180,23 @@ public class EnemyStatusEffectsSimple : MonoBehaviour
         if (cfg != null && !string.IsNullOrWhiteSpace(cfg.hudVfxDualMidSpace)) midS = cfg.hudVfxDualMidSpace;
         int secDp = cfg != null ? Mathf.Clamp(cfg.hudNearEnemySecondsDecimals, 0, 3) : 1;
         string secFmt = "F" + secDp;
+        string state = "";
+        EnemyChaseSimple chase = GetComponent<EnemyChaseSimple>();
+        if (chase != null)
+            state = "追" + chase.BuildHudChaseDebugSummary();
 
+        string vfx = "";
         if (t < burnEndTime && t < freezeEndTime)
-            return burnL + (burnEndTime - t).ToString(secFmt) + unitS + midS + iceL + (freezeEndTime - t).ToString(secFmt) + unitS;
-        if (t < burnEndTime)
-            return burnL + (burnEndTime - t).ToString(secFmt) + unitS;
-        return iceL + (freezeEndTime - t).ToString(secFmt) + unitS;
+            vfx = burnL + (burnEndTime - t).ToString(secFmt) + unitS + midS + iceL + (freezeEndTime - t).ToString(secFmt) + unitS;
+        else if (t < burnEndTime)
+            vfx = burnL + (burnEndTime - t).ToString(secFmt) + unitS;
+        else if (t < freezeEndTime)
+            vfx = iceL + (freezeEndTime - t).ToString(secFmt) + unitS;
+
+        if (string.IsNullOrEmpty(vfx))
+            return state;
+        if (string.IsNullOrEmpty(state))
+            return vfx;
+        return state + " " + vfx;
     }
 }

@@ -20,6 +20,25 @@ public class CameraFollowSimple : MonoBehaviour
     public float maxDistance = 18f;
 
     Vector3 _orbitOffset;
+    float _lookAtYOffset = 1.2f;
+
+    void Awake()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        smooth = Mathf.Max(0.01f, d.cameraFollowSmoothDefault);
+        offset = new Vector3(d.cameraFollowOffsetX, d.cameraFollowOffsetY, d.cameraFollowOffsetZ);
+        float mn = Mathf.Max(0.1f, d.cameraFollowMinDistanceDefault);
+        float mx = Mathf.Max(mn, d.cameraFollowMaxDistanceDefault);
+        minDistance = mn;
+        maxDistance = mx;
+        orbitSensitivity = Mathf.Max(0.1f, d.cameraFollowOrbitSensitivityDefault);
+        zoomSensitivity = Mathf.Max(0.1f, d.cameraFollowZoomSensitivityDefault);
+        minPitch = d.cameraFollowMinPitchDefault;
+        maxPitch = d.cameraFollowMaxPitchDefault;
+        if (maxPitch <= minPitch)
+            maxPitch = minPitch + 30f;
+        _lookAtYOffset = Mathf.Max(0.05f, d.cameraFollowLookAtYOffsetDefault);
+    }
 
     void Start()
     {
@@ -48,7 +67,7 @@ public class CameraFollowSimple : MonoBehaviour
 
         Vector3 desired = target.position + _orbitOffset;
         transform.position = Vector3.Lerp(transform.position, desired, smooth * Time.deltaTime);
-        transform.LookAt(target.position + Vector3.up * 1.2f);
+        transform.LookAt(target.position + Vector3.up * _lookAtYOffset);
     }
 
     void HandleZoom()

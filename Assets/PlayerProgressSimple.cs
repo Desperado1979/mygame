@@ -12,20 +12,34 @@ public class PlayerProgressSimple : MonoBehaviour
     public int xpBank;
     [Tooltip("经验兑换得到的技能解锁点（占位）")]
     public int skillUnlockPoints;
-    [Tooltip("本等级升级所需经验 = 基础 + (等级-1)*斜率")]
-    public int xpBasePerLevel = 40;
-    public int xpExtraPerLevelStep = 14;
     PlayerHotkeysSimple hotkeys;
 
     void Awake()
     {
         if (Instance != null && Instance != this)
         {
+            // 场景单机体先占 Instance；带 NGO 的玩家体后唤醒时会在 OnNetworkSpawn 里 SetPreferredInstance。
+            // 此处不再误报黄字，但仍需挂推导链，避免网络体缺组件。
+            bool thisNet = GetComponent<MultiplayerPlayerSimple>() != null;
+            bool instNet = Instance.GetComponent<MultiplayerPlayerSimple>() != null;
+            if (thisNet && !instNet)
+            {
+                EnsureDerivedStatsChain();
+                return;
+            }
+
             Debug.LogWarning("Multiple PlayerProgressSimple — keeping first instance.");
             return;
         }
 
         Instance = this;
+        EnsureDerivedStatsChain();
+    }
+
+    void EnsureDerivedStatsChain()
+    {
+        if (GetComponent<PlayerDerivedStatsSimple>() == null)
+            gameObject.AddComponent<PlayerDerivedStatsSimple>();
     }
 
     void OnDestroy()
@@ -36,9 +50,9 @@ public class PlayerProgressSimple : MonoBehaviour
 
     void Update()
     {
-        // Netcode: in multiplayer, progression input must go through MultiplayerPlayerSimple ServerRpc.
+        // Netcode: U/I 在联网时统一由 MultiplayerPlayerSimple 走 ServerRpc，避免纯 Client/Host 双处触发。
         MultiplayerPlayerSimple netPlayer = GetComponent<MultiplayerPlayerSimple>();
-        if (netPlayer != null && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.IsServer)
+        if (netPlayer != null && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             return;
 
         if (hotkeys == null)
@@ -47,17 +61,24 @@ public class PlayerProgressSimple : MonoBehaviour
         // U: 把经验池投入等级进度
         KeyCode levelKey = hotkeys != null ? hotkeys.spendXpToLevel : KeyCode.U;
         if (Input.GetKeyDown(levelKey))
-            SpendXpForLevel(10);
+        {
+            D3GrowthBalanceData db = D3GrowthBalance.Load();
+            SpendXpForLevel(db.spendXpToLevelPerPress);
+        }
 
         // I: 把经验池兑换为技能解锁点（占位）
         KeyCode spKey = hotkeys != null ? hotkeys.spendXpToSkillPoint : KeyCode.I;
         if (Input.GetKeyDown(spKey))
-            SpendXpForSkillUnlock(15);
+        {
+            D3GrowthBalanceData db = D3GrowthBalance.Load();
+            SpendXpForSkillUnlock(db.spendXpToSkillUnlockPerPress);
+        }
     }
 
     public int XpNeededThisLevel()
     {
-        return Mathf.Max(1, xpBasePerLevel + (level - 1) * xpExtraPerLevelStep);
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        return D3GrowthBalance.XpNeededForLevel(d, level);
     }
 
     public void AddXp(int amount)
@@ -68,6 +89,17 @@ public class PlayerProgressSimple : MonoBehaviour
 
     public bool SpendXpForLevel(int amount)
     {
+        D3GrowthBalanceData d0 = D3GrowthBalance.Load();
+        int maxL = Mathf.Max(1, d0.maxLevel);
+        if (level >= maxL)
+        {
+            if (amount > 0)
+                ServerAuditLogSimple.Push(
+                    ServerAuditLogSimple.CategorySrvValProgressReject,
+                    "op=add_level_xp&reason=max_level");
+            return false;
+        }
+
         if (amount <= 0 || xpBank < amount)
         {
             if (amount > 0)
@@ -77,17 +109,41 @@ public class PlayerProgressSimple : MonoBehaviour
             return false;
         }
 
+        int levelAtStart = level;
         xpBank -= amount;
         xpIntoCurrentLevel += amount;
-        int cap = 200;
-        while (level < cap && xpIntoCurrentLevel >= XpNeededThisLevel())
+        while (level < maxL && xpIntoCurrentLevel >= XpNeededThisLevel())
         {
-            xpIntoCurrentLevel -= XpNeededThisLevel();
+            int need = XpNeededThisLevel();
+            xpIntoCurrentLevel -= need;
             level++;
             Debug.Log($"Level Up → Lv.{level}");
         }
 
+        int levelsGained = level - levelAtStart;
+        if (levelsGained > 0)
+        {
+            D3GrowthBalanceData d3 = D3GrowthBalance.Load();
+            int addPts = levelsGained * d3.statPointsPerLevel;
+            if (addPts > 0)
+                GrantD3StatPoints(addPts);
+        }
+
         return true;
+    }
+
+    void GrantD3StatPoints(int n)
+    {
+        if (n <= 0) return;
+        var mps = GetComponent<MultiplayerPlayerSimple>();
+        if (mps != null && mps.IsSpawned && mps.IsServer)
+            mps.ServerGrantD3StatPoints(n);
+        else
+        {
+            PlayerStatsSimple st = GetComponent<PlayerStatsSimple>();
+            if (st != null)
+                st.GrantUnallocated(n);
+        }
     }
 
     public bool SpendXpForSkillUnlock(int costPerPoint)
@@ -109,7 +165,9 @@ public class PlayerProgressSimple : MonoBehaviour
 
     public void SetState(int newLevel, int newXpIntoLevel, int newXpBank, int newSkillPoints)
     {
-        level = Mathf.Max(1, newLevel);
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        int maxL = Mathf.Max(1, d.maxLevel);
+        level = Mathf.Clamp(newLevel, 1, maxL);
         xpIntoCurrentLevel = Mathf.Max(0, newXpIntoLevel);
         xpBank = Mathf.Max(0, newXpBank);
         skillUnlockPoints = Mathf.Max(0, newSkillPoints);

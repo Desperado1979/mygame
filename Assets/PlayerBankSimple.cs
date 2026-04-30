@@ -11,9 +11,21 @@ public class PlayerBankSimple : MonoBehaviour
     public int bankHpPotion;
     public int bankMpPotion;
 
-    [Header("快捷键每次存取数量")]
+    [Header("快捷键每次存取数量（默认由 DefaultD3Growth 覆盖）")]
     public int goldStep = 50;
     public int potionStep = 1;
+
+    void Awake()
+    {
+        ApplyD3BankStepsFromBalance();
+    }
+
+    void ApplyD3BankStepsFromBalance()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        goldStep = Mathf.Max(1, d.bankGoldStep);
+        potionStep = Mathf.Max(1, d.bankPotionStep);
+    }
 
     void Reset()
     {

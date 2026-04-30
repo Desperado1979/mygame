@@ -11,7 +11,7 @@ public partial class PlayerStateExportSimple : MonoBehaviour
     public string requestExportFileName = "client_sync_request.json";
     public string lastSyncSnapshotFileName = "last_sync_response.json";
 
-    [Tooltip("POST /sync 与 GET 排练根地址；可在运行时由 PlayerPrefs EOD_SYNC_BASE_URL 覆盖。")]
+    [Tooltip("POST /sync 与 GET 排练根地址。默认 8787 与 EpochOfDawn/server 下 npm run persist 一致。运行时 PlayerPrefs 键 EOD_SYNC_BASE_URL 可覆盖。文档：仓库根 docs/getting-started.md §5、EpochOfDawn/server/README.md。")]
     public string syncBaseUrl = "http://127.0.0.1:8787";
 
     [Tooltip("D17：与 persist_sync D16 对齐，若本地存有上次 ETag 则在 POST /sync 带 If-Match；关闭则从不发送（旧服调试）。")]
@@ -20,6 +20,7 @@ public partial class PlayerStateExportSimple : MonoBehaviour
     [Tooltip("D18：本地无 ETag 时，POST /sync 前先 GET /state 取 ETag 写入 PlayerPrefs，减少首包或清缓存后与服务器存档不一致。")]
     public bool syncPrefetchStateEtag = true;
 
+    [Tooltip("总开关：关则 F2 POST /sync、F1 health、Metrics（[ ] / ;）等网络排练流程不执行；F12/F4/F3 本地导出仍可（见 docs/getting-started §6.3）。排练服须先 npm run persist。")]
     public bool networkSyncEnabled = true;
 
     public int LastHttpCode;

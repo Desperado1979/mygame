@@ -20,6 +20,7 @@ public class MultiplayerEnemyAuthoritySimple : NetworkBehaviour
 
     EnemyChaseSimple chase;
     EnemyTouchDamageSimple touchDamage;
+    EnemySpellTouchDamageSimple spellTouchDamage;
     EnemyStatusEffectsSimple status;
     EnemyHealthSimple health;
     EnemyHitFeedbackSimple hitFeedback;
@@ -32,6 +33,7 @@ public class MultiplayerEnemyAuthoritySimple : NetworkBehaviour
         health = GetComponent<EnemyHealthSimple>();
         chase = GetComponent<EnemyChaseSimple>();
         touchDamage = GetComponent<EnemyTouchDamageSimple>();
+        spellTouchDamage = GetComponent<EnemySpellTouchDamageSimple>();
         status = GetComponent<EnemyStatusEffectsSimple>();
         hitFeedback = GetComponent<EnemyHitFeedbackSimple>();
         CacheVfxRoot();
@@ -82,6 +84,8 @@ public class MultiplayerEnemyAuthoritySimple : NetworkBehaviour
         bool serverOwnsLogic = IsServer;
         if (chase != null) chase.enabled = serverOwnsLogic;
         if (touchDamage != null) touchDamage.enabled = serverOwnsLogic;
+        if (spellTouchDamage != null && !spellTouchDamage.InactiveByBalance)
+            spellTouchDamage.enabled = serverOwnsLogic;
         if (status != null) status.enabled = serverOwnsLogic;
     }
 

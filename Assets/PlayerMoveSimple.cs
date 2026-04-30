@@ -11,6 +11,15 @@ public class PlayerMoveSimple : MonoBehaviour
     float dashEndTime;
     float dashReadyTime;
 
+    void Awake()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        moveSpeed = Mathf.Max(0.1f, d.playerSoloMoveSpeed);
+        dashMultiplier = Mathf.Max(1f, d.playerSoloDashMultiplier);
+        dashDuration = Mathf.Max(0.02f, d.playerSoloDashDuration);
+        dashCooldown = Mathf.Max(0.02f, d.playerSoloDashCooldown);
+    }
+
     void Update()
     {
         float h = Input.GetAxisRaw("Horizontal"); // A D

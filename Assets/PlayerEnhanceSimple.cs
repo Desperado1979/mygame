@@ -17,6 +17,15 @@ public class PlayerEnhanceSimple : MonoBehaviour
     [Tooltip("减伤上限，避免无敌")]
     [Range(0f, 0.9f)] public float maxDamageReduction = 0.6f;
 
+    void Awake()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        goldBase = d.enhanceGoldBase;
+        goldPerStep = d.enhanceGoldPerStep;
+        damageReductionPerStep = Mathf.Clamp(d.enhanceDamageReductionPerStep, 0f, 0.2f);
+        maxDamageReduction = Mathf.Clamp(d.enhanceMaxDamageReduction, 0f, 0.9f);
+    }
+
     void Reset()
     {
         wallet = GetComponent<PlayerWalletSimple>();

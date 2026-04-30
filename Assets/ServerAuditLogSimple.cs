@@ -64,8 +64,9 @@ public static class ServerAuditLogSimple
 
     static readonly Queue<string> queue = new Queue<string>();
     static readonly Queue<AuditEntry> structured = new Queue<AuditEntry>();
-    const int MaxItems = 256;
     static long seqCounter = 0;
+
+    static int AuditQueueCap => Mathf.Clamp(D3GrowthBalance.Load().auditQueueMaxItems, 16, 4096);
 
     public static void Push(string category, string payload)
     {
@@ -74,9 +75,10 @@ public static class ServerAuditLogSimple
         string msg = $"{seq}|{ts}|{category}|{payload}";
         queue.Enqueue(msg);
         structured.Enqueue(new AuditEntry { seq = seq, tsUtc = ts, category = category, payload = payload });
-        while (queue.Count > MaxItems)
+        int cap = AuditQueueCap;
+        while (queue.Count > cap)
             queue.Dequeue();
-        while (structured.Count > MaxItems)
+        while (structured.Count > cap)
             structured.Dequeue();
         Debug.Log($"[AUDIT] #{seq} {category} {payload}");
     }

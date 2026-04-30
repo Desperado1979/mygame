@@ -11,6 +11,11 @@ public class EnemySpawnerSimple : MonoBehaviour
     private GameObject currentEnemy;
     private float timer = 0f;
 
+    void Awake()
+    {
+        respawnDelay = Mathf.Max(0.1f, D3GrowthBalance.Load().enemySpawnerRespawnDelayDefault);
+    }
+
     void Start()
     {
         if (IsClientOnlyNetworkRuntime())
@@ -54,8 +59,10 @@ public class EnemySpawnerSimple : MonoBehaviour
             return;
         if (go.GetComponent<NetworkObject>() == null)
             go.AddComponent<NetworkObject>();
-        if (go.GetComponent<NetworkTransform>() == null)
-            go.AddComponent<NetworkTransform>();
+        NetworkTransform nt = go.GetComponent<NetworkTransform>();
+        if (nt == null)
+            nt = go.AddComponent<NetworkTransform>();
+        nt.Interpolate = true;
         if (go.GetComponent<MultiplayerEnemyAuthoritySimple>() == null)
             go.AddComponent<MultiplayerEnemyAuthoritySimple>();
         NetworkObject no = go.GetComponent<NetworkObject>();

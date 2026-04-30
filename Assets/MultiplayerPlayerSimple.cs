@@ -38,15 +38,33 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
     // Q/R 施放升档在 ServerRpc 里推进；必须同步到纯 Client，否则 HUD 的 q/r 一直显示 1。
     readonly NetworkVariable<int> masteryBurstLevelSync = new NetworkVariable<int>(1);
     readonly NetworkVariable<int> masteryFrostLevelSync = new NetworkVariable<int>(1);
+    readonly NetworkVariable<int> d3StrSync = new NetworkVariable<int>(10);
+    readonly NetworkVariable<int> d3AgiSync = new NetworkVariable<int>(10);
+    readonly NetworkVariable<int> d3IntSync = new NetworkVariable<int>(10);
+    readonly NetworkVariable<int> d3VitSync = new NetworkVariable<int>(10);
+    readonly NetworkVariable<int> d3UnallocSync = new NetworkVariable<int>(0);
+    PlayerStatsSimple d3Stats;
+    PlayerHotkeysSimple d3Hotkeys;
+    float meleeAttackCooldownEndTimeServer;
     float burstCooldownEndTimeServer;
     float frostCooldownEndTimeServer;
     // Client → server: one RPC with accumulated motion (per-frame ServerRpc hammers bandwidth / causes lag).
-    const float ClientMoveSendInterval = 0.04f;
+    float clientMoveSendInterval = 0.04f;
     float nextClientMoveSendUnscaled = float.NegativeInfinity;
     Vector3 clientMovePosDelta;
+    /// <summary>同物体上如仍有 <see cref="PlayerMoveSimple"/>（等 NGO Spawn 的 Capsule 场景体），由后者驱动；未生成前 IsOwner 为 false 时 MPS 不可抢输入。</summary>
+    PlayerMoveSimple coexistingPlayerMove;
+
+    void Awake()
+    {
+        coexistingPlayerMove = GetComponent<PlayerMoveSimple>();
+    }
 
     public override void OnNetworkSpawn()
     {
+        EnsureRuntimeSupportComponents();
+        d3Stats = GetComponent<PlayerStatsSimple>();
+        ApplyD3NetPlayerBaselinesFromBalance();
         health = GetComponent<PlayerHealthSimple>();
         mp = GetComponent<PlayerMpSimple>();
         mastery = GetComponent<PlayerSkillMasterySimple>();
@@ -69,6 +87,17 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
         skillPointsSync.OnValueChanged += OnProgressSyncChanged;
         burstTierSync.OnValueChanged += OnBurstTierSyncChanged;
         frostTierSync.OnValueChanged += OnFrostTierSyncChanged;
+        d3StrSync.OnValueChanged += OnD3SyncTouched;
+        d3AgiSync.OnValueChanged += OnD3SyncTouched;
+        d3IntSync.OnValueChanged += OnD3SyncTouched;
+        d3VitSync.OnValueChanged += OnD3SyncTouched;
+        d3UnallocSync.OnValueChanged += OnD3SyncTouched;
+        d3Hotkeys = GetComponent<PlayerHotkeysSimple>();
+        if (IsServer)
+            InitD3FromStatsOnServer();
+        ApplyD3MirrorToLocal();
+        // EnsureRuntimeSupportComponents 可能在 Spawn 时才挂上 PlayerEquipmentDebug —— 刷新四维推导上限。
+        GetComponent<PlayerDerivedStatsSimple>()?.RequestRefresh();
         if (IsServer && health != null)
             hpSync.Value = health.CurrentHp;
         if (IsServer && wallet != null)
@@ -98,8 +127,53 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
             BindCameraToSelf();
     }
 
+    void ApplyD3NetPlayerBaselinesFromBalance()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        moveSpeed = Mathf.Max(0.1f, d.playerNetMoveSpeed);
+        attackRange = Mathf.Max(0.1f, d.playerMeleeAttackRangeNet);
+        PlayerStatsSimple st = d3Stats != null ? d3Stats : GetComponent<PlayerStatsSimple>();
+        int str = st != null ? st.strength : d.startingStr;
+        damagePerHit = D3GrowthBalance.ComputeMeleePhysicalDamage(d, str);
+        clientMoveSendInterval = Mathf.Max(0.01f, d.netClientMoveSendIntervalSec);
+    }
+
+    void EnsureRuntimeSupportComponents()
+    {
+        // Build 直跑时若 NetPlayerHost 预制体漏挂某些脚本，这里兜底补齐，避免 Host/Client 功能不一致。
+        if (GetComponent<PlayerStateExportSimple>() == null)
+            gameObject.AddComponent<PlayerStateExportSimple>();
+        if (GetComponent<PlayerAreaStateSimple>() == null)
+            gameObject.AddComponent<PlayerAreaStateSimple>();
+        if (GetComponent<PlayerPvpSimple>() == null)
+            gameObject.AddComponent<PlayerPvpSimple>();
+        if (GetComponent<PartyPlaceholderSimple>() == null)
+            gameObject.AddComponent<PartyPlaceholderSimple>();
+        if (GetComponent<ChatPlaceholderSimple>() == null)
+            gameObject.AddComponent<ChatPlaceholderSimple>();
+        if (GetComponent<PlayerStatsSimple>() == null)
+            gameObject.AddComponent<PlayerStatsSimple>();
+        if (GetComponent<PlayerDerivedStatsSimple>() == null)
+            gameObject.AddComponent<PlayerDerivedStatsSimple>();
+        if (GetComponent<PlayerEquipmentDebugSimple>() == null)
+            gameObject.AddComponent<PlayerEquipmentDebugSimple>();
+    }
+
     void Update()
     {
+        if (!IsSpawned)
+        {
+            if (coexistingPlayerMove != null)
+                return;
+            if (health == null) health = GetComponent<PlayerHealthSimple>();
+            if (health != null && health.IsDead)
+                return;
+            float uh = Input.GetAxisRaw("Horizontal");
+            float uv = Input.GetAxisRaw("Vertical");
+            ApplyMove(BuildCameraRelativeDir(uh, uv), Time.deltaTime);
+            return;
+        }
+
         if (!IsOwner)
         {
             SyncLocalHpFromNetwork();
@@ -140,7 +214,7 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
                     MoveAccumulatedServerRpc(clientMovePosDelta);
                     clientMovePosDelta = Vector3.zero;
                 }
-                nextClientMoveSendUnscaled = Time.unscaledTime + ClientMoveSendInterval;
+                nextClientMoveSendUnscaled = Time.unscaledTime + clientMoveSendInterval;
             }
         }
 
@@ -151,13 +225,21 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
         if (Input.GetKeyDown(KeyCode.R))
             CastFrostServerRpc();
         if (Input.GetKeyDown(KeyCode.U))
-            RequestSpendXpToLevel_ServerRpc(10);
+            RequestSpendXpToLevel_ServerRpc();
         if (Input.GetKeyDown(KeyCode.I))
-            RequestSpendXpToSkillPoint_ServerRpc(15);
+            RequestSpendXpToSkillPoint_ServerRpc();
         if (Input.GetKeyDown(KeyCode.O))
             RequestUnlockBurstTier2_ServerRpc();
         if (Input.GetKeyDown(KeyCode.P))
             RequestUnlockFrostTier2_ServerRpc();
+        if (d3Hotkeys == null) d3Hotkeys = GetComponent<PlayerHotkeysSimple>();
+        if (d3Hotkeys != null)
+        {
+            if (Input.GetKeyDown(d3Hotkeys.d3AddStr)) RequestD3AllocateServerRpc(0);
+            if (Input.GetKeyDown(d3Hotkeys.d3AddAgi)) RequestD3AllocateServerRpc(1);
+            if (Input.GetKeyDown(d3Hotkeys.d3AddInt)) RequestD3AllocateServerRpc(2);
+            if (Input.GetKeyDown(d3Hotkeys.d3AddVit)) RequestD3AllocateServerRpc(3);
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -171,23 +253,83 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
         skillPointsSync.OnValueChanged -= OnProgressSyncChanged;
         burstTierSync.OnValueChanged -= OnBurstTierSyncChanged;
         frostTierSync.OnValueChanged -= OnFrostTierSyncChanged;
+        d3StrSync.OnValueChanged -= OnD3SyncTouched;
+        d3AgiSync.OnValueChanged -= OnD3SyncTouched;
+        d3IntSync.OnValueChanged -= OnD3SyncTouched;
+        d3VitSync.OnValueChanged -= OnD3SyncTouched;
+        d3UnallocSync.OnValueChanged -= OnD3SyncTouched;
         base.OnNetworkDespawn();
     }
 
-    [ServerRpc(RequireOwnership = true)]
-    void RequestSpendXpToLevel_ServerRpc(int amount)
+    void InitD3FromStatsOnServer()
     {
-        if (progress == null) progress = GetComponent<PlayerProgressSimple>();
-        if (progress != null)
-            progress.SpendXpForLevel(amount);
+        if (d3Stats == null) d3Stats = GetComponent<PlayerStatsSimple>();
+        if (d3Stats == null) return;
+        d3StrSync.Value = d3Stats.strength;
+        d3AgiSync.Value = d3Stats.agility;
+        d3IntSync.Value = d3Stats.intellect;
+        d3VitSync.Value = d3Stats.vitality;
+        d3UnallocSync.Value = d3Stats.unallocatedStatPoints;
+    }
+
+    void OnD3SyncTouched(int previous, int current) => ApplyD3MirrorToLocal();
+
+    void ApplyD3MirrorToLocal()
+    {
+        if (d3Stats == null) d3Stats = GetComponent<PlayerStatsSimple>();
+        if (d3Stats == null) return;
+        d3Stats.ApplyStatsMirror(
+            d3StrSync.Value, d3AgiSync.Value, d3IntSync.Value, d3VitSync.Value, d3UnallocSync.Value);
+        PlayerDerivedStatsSimple derived = GetComponent<PlayerDerivedStatsSimple>();
+        if (derived != null) derived.RequestRefresh();
+        RefreshMeleeDamagePreviewFromStats();
+    }
+
+    void RefreshMeleeDamagePreviewFromStats()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        PlayerStatsSimple st = d3Stats != null ? d3Stats : GetComponent<PlayerStatsSimple>();
+        int str = st != null ? st.strength : d.startingStr;
+        damagePerHit = D3GrowthBalance.ComputeMeleePhysicalDamage(d, str);
+    }
+
+    public void ServerGrantD3StatPoints(int n)
+    {
+        if (!IsServer || !IsSpawned || n <= 0) return;
+        d3UnallocSync.Value = Mathf.Max(0, d3UnallocSync.Value) + n;
     }
 
     [ServerRpc(RequireOwnership = true)]
-    void RequestSpendXpToSkillPoint_ServerRpc(int costPerPoint)
+    void RequestD3AllocateServerRpc(int which)
     {
+        if (d3UnallocSync.Value < 1)
+            return;
+        d3UnallocSync.Value = d3UnallocSync.Value - 1;
+        switch (which)
+        {
+            case 0: d3StrSync.Value = d3StrSync.Value + 1; break;
+            case 1: d3AgiSync.Value = d3AgiSync.Value + 1; break;
+            case 2: d3IntSync.Value = d3IntSync.Value + 1; break;
+            case 3: d3VitSync.Value = d3VitSync.Value + 1; break;
+        }
+    }
+
+    [ServerRpc(RequireOwnership = true)]
+    void RequestSpendXpToLevel_ServerRpc()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
         if (progress == null) progress = GetComponent<PlayerProgressSimple>();
         if (progress != null)
-            progress.SpendXpForSkillUnlock(costPerPoint);
+            progress.SpendXpForLevel(d.spendXpToLevelPerPress);
+    }
+
+    [ServerRpc(RequireOwnership = true)]
+    void RequestSpendXpToSkillPoint_ServerRpc()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        if (progress == null) progress = GetComponent<PlayerProgressSimple>();
+        if (progress != null)
+            progress.SpendXpForSkillUnlock(d.spendXpToSkillUnlockPerPress);
     }
 
     [ServerRpc(RequireOwnership = true)]
@@ -257,7 +399,8 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
             return;
 
         string id = hpPotion ? GameItemIdsSimple.HpPotion : GameItemIdsSimple.MpPotion;
-        MirrorPotionConsumeClientRpc(id, 1, 1f);
+        float w = inv.PotionUnitWeight;
+        MirrorPotionConsumeClientRpc(id, 1, w);
     }
 
     [ServerRpc(RequireOwnership = true)]
@@ -271,10 +414,11 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
         bool ok = inv.TrySellOnePotion();
         if (!ok)
             return;
+        float pw = inv.PotionUnitWeight;
         if (hpBefore > inv.HpPotionCount)
-            MirrorInventoryRemoveClientRpc(GameItemIdsSimple.HpPotion, 1, 1f);
+            MirrorInventoryRemoveClientRpc(GameItemIdsSimple.HpPotion, 1, pw);
         else if (mpBefore > inv.MpPotionCount)
-            MirrorInventoryRemoveClientRpc(GameItemIdsSimple.MpPotion, 1, 1f);
+            MirrorInventoryRemoveClientRpc(GameItemIdsSimple.MpPotion, 1, pw);
     }
 
     [ServerRpc(RequireOwnership = true)]
@@ -289,9 +433,9 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
         if (!ok)
             return;
         if (shardBefore > inv.GetCount(GameItemIdsSimple.Shard))
-            MirrorInventoryRemoveClientRpc(GameItemIdsSimple.Shard, 1, 1f);
+            MirrorInventoryRemoveClientRpc(GameItemIdsSimple.Shard, 1, inv.ShardUnitWeight);
         else if (mpBefore > inv.MpPotionCount)
-            MirrorInventoryRemoveClientRpc(GameItemIdsSimple.MpPotion, 1, 1f);
+            MirrorInventoryRemoveClientRpc(GameItemIdsSimple.MpPotion, 1, inv.PotionUnitWeight);
     }
 
     [ServerRpc(RequireOwnership = true)]
@@ -305,7 +449,7 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
             return;
 
         int count = Mathf.Max(1, inv.buyPotionCount);
-        float w = Mathf.Max(0.1f, inv.buyPotionWeight);
+        float w = inv.PotionUnitWeight;
         string id = hpPotion ? GameItemIdsSimple.HpPotion : GameItemIdsSimple.MpPotion;
         MirrorInventoryAddClientRpc(w, id, count);
     }
@@ -328,65 +472,145 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
             transform.forward = n.normalized;
     }
 
+    /// <summary>
+    /// <see cref="AreaPortalSimple"/>：位移必须在服务端与 <see cref="MoveAccumulatedServerRpc"/> 一致，否则纯 Client 会被 NetworkTransform 回滚。
+    /// </summary>
+    [ServerRpc(RequireOwnership = true)]
+    public void TeleportViaAreaPortalServerRpc(Vector3 portalWorldPos, float useRange, Vector3 destination, float portalYTolerance)
+    {
+        if (!IsServer)
+            return;
+        Vector3 serverPos = transform.position;
+        if (!AreaPortalSimple.IsInUseRangeForPortal(
+                serverPos, portalWorldPos, useRange, portalYTolerance, serverSlack: true))
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float dx = serverPos.x - portalWorldPos.x;
+            float dz = serverPos.z - portalWorldPos.z;
+            float horiz = Mathf.Sqrt(dx * dx + dz * dz);
+            Debug.LogWarning(
+                "[MP][Portal] 服务端未放行传送（纯 Client 上常见：服端坐标比本机晚半步）。player=" + serverPos +
+                " portal=" + portalWorldPos + " horiz=" + horiz.ToString("F2") + "m yΔ=" +
+                Mathf.Abs(serverPos.y - portalWorldPos.y).ToString("F2") + "m useR=" + useRange);
+#endif
+            return;
+        }
+        transform.position = destination;
+    }
+
     [ServerRpc]
     void AttackServerRpc(float range, int damage)
     {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        float serverRange = Mathf.Max(0.1f, d.playerMeleeAttackRangeNet);
+        if (Mathf.Abs(range - serverRange) > 0.01f)
+        {
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValIllegalOperation,
+                $"op=attack&reason=range_override&client={range:F2}&server={serverRange:F2}");
+        }
+
+        if (Time.time < meleeAttackCooldownEndTimeServer)
+        {
+            float remain = meleeAttackCooldownEndTimeServer - Time.time;
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValIllegalOperation,
+                $"op=attack&reason=cooldown&remainSec={remain:F2}");
+            return;
+        }
+        // 伤害以服端根据 STR×表 重算，不信任 Client 传入的 damage（防篡改）。
         // Must use server-authoritative transform. Client-passed positions desync from NetworkTransform
         // and OverlapSphere would miss on the host simulation (Host OK, pure Client always "miss").
         Vector3 attackerPos = transform.position;
-        Collider[] hits = Physics.OverlapSphere(attackerPos, range);
+        Collider[] hits = Physics.OverlapSphere(attackerPos, serverRange);
         EnemyHealthSimple best = null;
         float bestDist = float.MaxValue;
         for (int i = 0; i < hits.Length; i++)
         {
             EnemyHealthSimple e = hits[i].GetComponentInParent<EnemyHealthSimple>();
             if (e == null) continue;
-            float d = (e.transform.position - attackerPos).sqrMagnitude;
-            if (d < bestDist)
+            float distSq = (e.transform.position - attackerPos).sqrMagnitude;
+            if (distSq < bestDist)
             {
                 best = e;
-                bestDist = d;
+                bestDist = distSq;
             }
         }
 
         if (best != null)
         {
-            best.TakeHit(Mathf.Max(1, damage), attackerPos, gameObject);
+            D3GrowthBalanceData db = D3GrowthBalance.Load();
+            PlayerStatsSimple st = d3Stats != null ? d3Stats : GetComponent<PlayerStatsSimple>();
+            int str = st != null ? st.strength : db.startingStr;
+            int agi = st != null ? st.agility : db.startingAgi;
+            float atkInterval = D3GrowthBalance.ComputeMeleeAttackInterval(db, agi);
+            meleeAttackCooldownEndTimeServer = Time.time + atkInterval;
+            int raw = D3GrowthBalance.ComputeMeleePhysicalDamage(db, str);
+            int afterArmor = D3GrowthBalance.ApplyPhysicalDefenseToDamage(raw, best.PhysicalDefense);
+            int final = D3GrowthBalance.ApplyMeleeCritAfterPhysicalArmor(db, agi, afterArmor);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float critP = D3GrowthBalance.MeleeCritProbability(db, agi);
+            bool crit = final > afterArmor;
+            Debug.Log($"[MeleeHit][Host] str={str} agi={agi} raw={raw} def={best.PhysicalDefense} base={afterArmor} final={final} crit={(crit ? 1 : 0)} p={critP:P1}");
+#endif
+            best.TakeHit(final, attackerPos, gameObject);
             return;
         }
 
         ServerAuditLogSimple.Push(
             ServerAuditLogSimple.CategorySrvValCombatMiss,
-            $"net=1&range={range:F1}");
+            $"net=1&range={serverRange:F1}");
+        PlayerStatsSimple stMiss = d3Stats != null ? d3Stats : GetComponent<PlayerStatsSimple>();
+        int agiMiss = stMiss != null ? stMiss.agility : d.startingAgi;
+        meleeAttackCooldownEndTimeServer = Time.time + D3GrowthBalance.ComputeMeleeAttackInterval(d, agiMiss);
     }
 
     [ServerRpc]
     void CastBurstServerRpc()
     {
         if (mp == null || burstSkill == null)
+        {
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValIllegalOperation,
+                "op=cast_burst&reason=missing_component");
             return;
+        }
         if (Time.time < burstCooldownEndTimeServer)
+        {
+            float remain = burstCooldownEndTimeServer - Time.time;
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValIllegalOperation,
+                $"op=cast_burst&reason=cooldown&remainSec={remain:F2}");
             return;
+        }
         if (!mp.TrySpend(burstSkill.mpCost))
+        {
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValIllegalOperation,
+                $"op=cast_burst&reason=mp_not_enough&need={burstSkill.mpCost}&have={mp.CurrentMpRounded}");
             return;
+        }
 
         burstCooldownEndTimeServer = Time.time + Mathf.Max(0.1f, burstSkill.cooldownSeconds);
         if (mastery != null)
             mastery.RegisterBurstCast();
 
         int tier = unlocks != null ? unlocks.burstTier : 1;
-        float tierDamageMul = tier >= 2 ? 1.35f : 1f;
-        float tierRangeMul = tier >= 2 ? 1.15f : 1f;
+        D3GrowthBalanceData d3b = D3GrowthBalance.Load();
         float dmgMult = mastery != null ? mastery.BurstDamageMultiplier : 1f;
-        int rolledDamage = Mathf.Max(1, Mathf.RoundToInt(burstSkill.damagePerEnemy * dmgMult * tierDamageMul));
+        PlayerStatsSimple stBurst = d3Stats != null ? d3Stats : GetComponent<PlayerStatsSimple>();
+        int intelBurst = stBurst != null ? stBurst.intellect : d3b.startingInt;
+        int rolledDamage = D3GrowthBalance.ComputeBurstRolledDamage(
+            d3b, burstSkill.damagePerEnemy, intelBurst, dmgMult, tier);
 
         Vector3 attackerPos = transform.position;
-        Collider[] hits = Physics.OverlapSphere(attackerPos, burstSkill.skillRadius * tierRangeMul, burstSkill.enemyLayer);
+        float burstR = D3GrowthBalance.ComputeBurstOverlapRadius(d3b, burstSkill.skillRadius, tier);
+        Collider[] hits = Physics.OverlapSphere(attackerPos, burstR, burstSkill.enemyLayer);
         for (int i = 0; i < hits.Length; i++)
         {
             EnemyHealthSimple enemy = hits[i].GetComponentInParent<EnemyHealthSimple>();
             if (enemy == null) continue;
-            enemy.TakeHit(rolledDamage, attackerPos, gameObject);
+            enemy.TakeSpellHit(rolledDamage, attackerPos, gameObject);
             EnemyStatusEffectsSimple status = hits[i].GetComponentInParent<EnemyStatusEffectsSimple>();
             if (status != null && burstSkill.burnDurationSeconds > 0f)
                 status.ApplyBurn(burstSkill.burnDurationSeconds);
@@ -397,27 +621,57 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
     void CastFrostServerRpc()
     {
         if (mp == null || frostSkill == null)
+        {
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValIllegalOperation,
+                "op=cast_frost&reason=missing_component");
             return;
+        }
         if (Time.time < frostCooldownEndTimeServer)
+        {
+            float remain = frostCooldownEndTimeServer - Time.time;
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValIllegalOperation,
+                $"op=cast_frost&reason=cooldown&remainSec={remain:F2}");
             return;
+        }
         if (!mp.TrySpend(frostSkill.mpCost))
+        {
+            ServerAuditLogSimple.Push(
+                ServerAuditLogSimple.CategorySrvValIllegalOperation,
+                $"op=cast_frost&reason=mp_not_enough&need={frostSkill.mpCost}&have={mp.CurrentMpRounded}");
             return;
+        }
 
         frostCooldownEndTimeServer = Time.time + Mathf.Max(0.1f, frostSkill.cooldownSeconds);
         if (mastery != null)
             mastery.RegisterFrostCast();
 
         int tier = unlocks != null ? unlocks.frostTier : 1;
-        float tierFreezeMul = tier >= 2 ? 1.35f : 1f;
-        float tierRadiusMul = tier >= 2 ? 1.12f : 1f;
-        float freezeSec = frostSkill.freezeDurationSeconds * tierFreezeMul;
-        if (mastery != null)
-            freezeSec *= mastery.FrostFreezeDurationMultiplier;
+        D3GrowthBalanceData d3f = D3GrowthBalance.Load();
+        float freezeSec = D3GrowthBalance.ComputeFrostFreezeDurationSeconds(
+            d3f,
+            frostSkill.freezeDurationSeconds,
+            tier,
+            mastery != null ? mastery.FrostFreezeDurationMultiplier : 1f);
+
+        PlayerStatsSimple stFrost = d3Stats != null ? d3Stats : GetComponent<PlayerStatsSimple>();
+        int intelFrost = stFrost != null ? stFrost.intellect : d3f.startingInt;
+        int rolledDamage = D3GrowthBalance.ComputeFrostRolledDamage(
+            d3f, frostSkill.frostDamagePerEnemy, intelFrost, tier);
 
         Vector3 attackerPos = transform.position;
-        Collider[] hits = Physics.OverlapSphere(attackerPos, frostSkill.skillRadius * tierRadiusMul, frostSkill.enemyLayer);
+        float frostR = D3GrowthBalance.ComputeFrostOverlapRadius(d3f, frostSkill.skillRadius, tier);
+        Collider[] hits = Physics.OverlapSphere(attackerPos, frostR, frostSkill.enemyLayer);
         for (int i = 0; i < hits.Length; i++)
         {
+            if (rolledDamage > 0)
+            {
+                EnemyHealthSimple eh = hits[i].GetComponentInParent<EnemyHealthSimple>();
+                if (eh != null)
+                    eh.TakeSpellHit(rolledDamage, attackerPos, gameObject);
+            }
+
             EnemyStatusEffectsSimple status = hits[i].GetComponentInParent<EnemyStatusEffectsSimple>();
             if (status != null)
                 status.ApplyFreeze(freezeSec);
@@ -470,6 +724,10 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
             hud.mp = GetComponent<PlayerMpSimple>();
             if (hud.stateExport == null)
                 hud.stateExport = GetComponent<PlayerStateExportSimple>();
+            if (hud.playerStats == null)
+                hud.playerStats = GetComponent<PlayerStatsSimple>();
+            if (hud.equipDebug == null)
+                hud.equipDebug = GetComponent<PlayerEquipmentDebugSimple>();
         }
     }
 
@@ -698,5 +956,32 @@ public class MultiplayerPlayerSimple : NetworkBehaviour
             return null;
         GameObject go = GameObject.Find(name);
         return go != null ? go.transform : null;
+    }
+
+    [ServerRpc(RequireOwnership = true)]
+    void SubmitRoomChatServerRpc(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return;
+        ChatRoomStateSimple room = ChatRoomStateSimple.Instance;
+        if (room == null)
+            return;
+        room.ServerAppendRoomFromPlayer(OwnerClientId, text);
+    }
+
+    /// <summary>B2·Day4：房间频道；仅 Owner 调，服端写入 <see cref="ChatRoomStateSimple"/> 并广播全端。</summary>
+    public void OwnerSendRoomChat(string message)
+    {
+        if (!IsOwner)
+            return;
+        if (string.IsNullOrEmpty(message))
+            return;
+        string s = message;
+        if (s.Length > ChatRoomStateSimple.MaxPayloadChars)
+            s = s.Substring(0, ChatRoomStateSimple.MaxPayloadChars);
+        s = s.Replace("\r", " ").Replace("\n", " ").Trim();
+        if (s.Length == 0)
+            return;
+        SubmitRoomChatServerRpc(s);
     }
 }

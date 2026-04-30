@@ -510,6 +510,7 @@ MonoBehaviour:
   cooldownSeconds: 3.5
   skillRadius: 2.8
   freezeDurationSeconds: 2.2
+  frostDamagePerEnemy: 0
 --- !u!114 &232738296
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -523,6 +524,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   testArmor: {fileID: 11400000, guid: e1e2e3e4e5e6e7e8e9e0f1f2f3f4f5f6, type: 2}
+  treatTestArmorAsEquipped: 1
   playerStrengthForTest: 8
 --- !u!114 &232738297
 MonoBehaviour:
@@ -544,6 +546,8 @@ MonoBehaviour:
   frostCastsThisLevel: 0
   frostCastsBase: 5
   frostCastsPerLevel: 3
+  burstDamageScalePerLevel: 0.08
+  frostFreezeScalePerLevel: 0.06
 --- !u!114 &232738298
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -583,8 +587,6 @@ MonoBehaviour:
   xpIntoCurrentLevel: 0
   xpBank: 0
   skillUnlockPoints: 0
-  xpBasePerLevel: 40
-  xpExtraPerLevelStep: 14
 --- !u!114 &232738300
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -709,8 +711,8 @@ MonoBehaviour:
   sendSystemKey: 96
   localMessage: Hello local channel
   systemMessage: 'System: maintenance placeholder'
-  lastLocalSent: 
-  lastSystemSent: 
+  lastLocalSent: "\u7EC4\u5417"
+  lastSystemSent: "\u670D\u52A1\u5668\u5E9F\u7269"
 --- !u!114 &232738307
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -728,6 +730,7 @@ MonoBehaviour:
   shareDropWithParty: 1
   addMemberKey: 61
   removeMemberKey: 45
+  toggleShareDropKey: 268
 --- !u!114 &232738308
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -777,6 +780,7 @@ MonoBehaviour:
   buyHpPotion: 98
   buyMpPotion: 110
   sellPotion: 118
+  discardJunk: 99
   enhance: 116
   bankDepositGold: 286
   bankWithdrawGold: 287
@@ -794,6 +798,10 @@ MonoBehaviour:
   metricsDashboard: 93
   metricsAuditCategories: 59
   probeServerHealth: 282
+  d3AddStr: 257
+  d3AddAgi: 258
+  d3AddInt: 259
+  d3AddVit: 260
   metricsAlertsPlayersAlt: 106
   metricsDashboardAlt: 108
   probeServerHealthAlt: 48
@@ -1005,6 +1013,7 @@ MonoBehaviour:
   useKey: 102
   prompt: Press F to travel
   useRange: 2
+  yTolerance: 4
   toCity: 0
 --- !u!1 &322623514
 GameObject:
@@ -1043,6 +1052,7 @@ MonoBehaviour:
   useKey: 102
   prompt: Press F to travel
   useRange: 2
+  yTolerance: 4
   toCity: 1
 --- !u!65 &322623516
 BoxCollider:
@@ -1441,7 +1451,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cityCenter: {fileID: 1682093491}
-  cityRadius: 2
+  cityRadius: 10
   citySpawnPoint: {fileID: 1152183493}
   fieldSpawnPoint: {fileID: 1483120297}
 --- !u!4 &561859370
@@ -1488,7 +1498,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f0cbc627b6856f741ba189b181ce3e5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  radius: 2
+  radius: 10
   zoneConfig: {fileID: 561859369}
   syncFromZoneConfig: 0
   keepSyncInPlayMode: 0
@@ -1733,7 +1743,7 @@ Transform:
   m_GameObject: {fileID: 902002010}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10, y: 0, z: 10}
+  m_LocalPosition: {x: 20, y: 0, z: 20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1757,7 +1767,7 @@ MonoBehaviour:
   useDefaultConfigWhenMissing: 1
   waveEnemyCounts: 0a0000000a0000000a0000000a0000000a0000000a0000000a0000000a0000000a0000000a000000
   overrideWaveEnemyCountsFromInspector: 0
-  delayBetweenWaves: 2
+  delayBetweenWaves: 4
   spawnRingRadius: 8
   spawnY: 0.5
   loopWaves: 1
@@ -1889,7 +1899,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 100, y: -80}
+  m_AnchoredPosition: {x: 100, y: -10}
   m_SizeDelta: {x: 300, y: 1000}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1121866550
@@ -1929,6 +1939,7 @@ MonoBehaviour:
   useKey: 102
   prompt: Press F to travel
   useRange: 2
+  yTolerance: 4
   toCity: 0
 --- !u!65 &1121866552
 BoxCollider:
@@ -2097,9 +2108,11 @@ MonoBehaviour:
   party: {fileID: 232738307}
   chat: {fileID: 232738306}
   stateExport: {fileID: 0}
+  playerStats: {fileID: 0}
   p1A1Quest: {fileID: 0}
   waveSpawner: {fileID: 0}
   showDebugDetails: 1
+  showDirectorPlainSmokeTip: 1
 --- !u!224 &1170745098
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2207,6 +2220,58 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1961754507
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1961754509}
+  - component: {fileID: 1961754508}
+  m_Layer: 0
+  m_Name: MultiplayerBootstrap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1961754508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1961754507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d61cebb1a16e7b7469f87beb7612a619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startupMode: 2
+  autoStartOnPlay: 1
+  disableScenePlayersWhenNetworkStarts: 1
+  connectionConfig: {fileID: 0}
+  connectAddress: 127.0.0.1
+  connectPort: 7777
+  started: 0
+  effectiveMode: 0
+--- !u!4 &1961754509
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1961754507}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 33.281403, y: 2.5762177, z: 53.913216}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2007341346
 GameObject:
   m_ObjectHideFlags: 0
@@ -2261,3 +2326,4 @@ SceneRoots:
   - {fileID: 1483120297}
   - {fileID: 322623519}
   - {fileID: 1121866555}
+  - {fileID: 1961754509}

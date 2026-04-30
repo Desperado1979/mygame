@@ -59,11 +59,25 @@ public class WaveSpawnerSimple : MonoBehaviour
         if (waveEnemyCounts == null || waveEnemyCounts.Length == 0)
             waveEnemyCounts = new[] { 2, 3, 5 };
 
+        EnsurePublicObjectiveWorldHint();
+
         if (enemyPrefab == null)
             return;
 
         _waveCursor = 0;
         _spawnAfterTime = Time.time;
+        PushWaveToNetIfServer();
+    }
+
+    void PushWaveToNetIfServer()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening
+            || !NetworkManager.Singleton.IsServer)
+            return;
+        if (waveEnemyCounts == null || waveEnemyCounts.Length == 0)
+            return;
+        PublicObjectiveEventStateSimple.Instance?.ServerSetPublicWaveState(
+            _waveCursor, waveEnemyCounts.Length, allWavesComplete);
     }
 
     void Update()
@@ -90,6 +104,8 @@ public class WaveSpawnerSimple : MonoBehaviour
                 if (!loopWaves)
                 {
                     allWavesComplete = true;
+                    PublicObjectiveEventStateSimple.Instance?.ServerSetPublicWaveState(
+                        _waveCursor, waveEnemyCounts.Length, allWavesComplete: true);
                     return;
                 }
                 _waveCursor = 0;
@@ -113,6 +129,9 @@ public class WaveSpawnerSimple : MonoBehaviour
     {
         int n = Mathf.Max(1, waveEnemyCounts[_waveCursor]);
         currentWaveIndex = _waveCursor;
+        // 纯 Client 不跑本组件 Update，HUD 用 PublicObjective 上的 NetworkVariable 与 Host 一致。
+        PublicObjectiveEventStateSimple.Instance?.ServerSetPublicWaveState(
+            _waveCursor, waveEnemyCounts.Length, allWavesComplete: false);
         Vector3 c = center != null ? center.position : transform.position;
         bool spawnEliteThisWave = spawnPublicEliteEachWave && Mathf.Max(1, eliteEveryNWaves) > 0 && (_waveCursor % Mathf.Max(1, eliteEveryNWaves) == 0);
 
@@ -128,6 +147,8 @@ public class WaveSpawnerSimple : MonoBehaviour
                 PublicObjectiveEventStateSimple st = PublicObjectiveEventStateSimple.Instance;
                 if (st != null)
                     st.ServerMarkEliteSpawned(_waveCursor + 1);
+                else
+                    PublicObjectiveLocalStateSimple.Ensure()?.MarkEliteSpawned(_waveCursor + 1);
             }
             TrySpawnAsNetworkEnemy(go);
             _alive.Add(go);
@@ -145,12 +166,24 @@ public class WaveSpawnerSimple : MonoBehaviour
         if (no == null)
             no = go.AddComponent<NetworkObject>();
 
-        if (go.GetComponent<NetworkTransform>() == null)
-            go.AddComponent<NetworkTransform>();
+        NetworkTransform nt = go.GetComponent<NetworkTransform>();
+        if (nt == null)
+            nt = go.AddComponent<NetworkTransform>();
+        nt.Interpolate = true;
         if (go.GetComponent<MultiplayerEnemyAuthoritySimple>() == null)
             go.AddComponent<MultiplayerEnemyAuthoritySimple>();
 
         if (!no.IsSpawned)
             no.Spawn();
+    }
+
+    void EnsurePublicObjectiveWorldHint()
+    {
+        P1AContentConfig cfg = contentConfig != null ? contentConfig : P1AContentConfig.TryLoadDefault();
+        if (cfg == null || !cfg.publicObjectiveWorldHintEnabled)
+            return;
+        if (GetComponent<PublicObjectiveWorldHintSimple>() != null)
+            return;
+        gameObject.AddComponent<PublicObjectiveWorldHintSimple>();
     }
 }

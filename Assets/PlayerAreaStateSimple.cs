@@ -7,11 +7,25 @@ public class PlayerAreaStateSimple : MonoBehaviour
     public Transform cityCenter;
     public float cityRadius = 16f;
     public string currentArea = "Field";
+    float _nextAutoBindAt;
+    float _zonePollSec = 1f;
 
     public bool IsInCity => currentArea == "City";
 
+    void Awake()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        cityRadius = Mathf.Max(0.5f, d.worldCityRadiusDefault);
+        _zonePollSec = Mathf.Max(0.2f, d.playerAreaZoneConfigPollSec);
+    }
+
     void Update()
     {
+        if (zoneConfig == null && Time.unscaledTime >= _nextAutoBindAt)
+        {
+            _nextAutoBindAt = Time.unscaledTime + _zonePollSec;
+            zoneConfig = FindObjectOfType<WorldZoneConfigSimple>(true);
+        }
         if (zoneConfig != null)
         {
             cityCenter = zoneConfig.cityCenter;

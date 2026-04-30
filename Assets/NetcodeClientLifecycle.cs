@@ -11,8 +11,6 @@ using UnityEngine;
 [DefaultExecutionOrder(-9990)]
 public class NetcodeClientLifecycle : MonoBehaviour
 {
-    const float WaitLocalPlayerTimeoutSec = 12f;
-
     public void Begin()
     {
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
@@ -25,8 +23,9 @@ public class NetcodeClientLifecycle : MonoBehaviour
 
     IEnumerator Run()
     {
+        float timeout = Mathf.Max(1f, D3GrowthBalance.Load().netClientWaitLocalPlayerLifecycleSec);
         float waited = 0f;
-        while (waited < WaitLocalPlayerTimeoutSec)
+        while (waited < timeout)
         {
             var nm = NetworkManager.Singleton;
             if (nm == null || !nm.IsListening)

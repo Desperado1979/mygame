@@ -8,6 +8,8 @@ public class PlayerPickupSimple : MonoBehaviour
 
     void Awake()
     {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        pickupRange = Mathf.Max(0.1f, d.interactionPickupRange);
         // Inspector default (0) means "no layers". Also include project "Drop" layer — many drop prefabs use it
         // (see Resources/Drops/Drop_Coin); mask Default-only would never OverlapSphere them.
         if (dropLayer.value == 0)

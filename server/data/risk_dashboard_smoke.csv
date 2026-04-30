@@ -1,6 +1,7 @@
 section,key,value
-summary,requests_total,1
+summary,requests_total,3
 summary,accept_rate,100
-summary,warnings_low,0
+summary,warnings_low,1
 summary,warnings_high,0
-top_player,local_player_001,risk=0|req=1|rej=0
+top_player,local_player_001,risk=1|req=3|rej=0
+top_code,audit_contains_srvval,1

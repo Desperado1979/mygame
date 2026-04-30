@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: Test Iron Chest
   requiredStrength: 14
+  bonusMaxHp: 50
+  bonusMaxMp: 50
   resistFreezePercent: 12
   resistBurnPercent: 8
   resistPoisonPercent: 5

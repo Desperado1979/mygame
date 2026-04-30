@@ -16,10 +16,33 @@ public class PlayerInventorySimple : MonoBehaviour
     public float buyPotionWeight = 1f;
     public int sellPotionGold = 8;
     public int sellManaGold = 10;
+    /// <summary>与 <c>DefaultD3Growth</c> 的 <c>potionUnitWeight</c> 一致，用于买/用/卖扣重。</summary>
+    public float PotionUnitWeight => Mathf.Max(0.1f, buyPotionWeight);
+    float _shardUnitWeight = 1f;
+    public float ShardUnitWeight => Mathf.Max(0.01f, _shardUnitWeight);
     float currentWeight;
     int stackCount;
     PlayerHotkeysSimple hotkeys;
     readonly Dictionary<string, int> itemCounts = new Dictionary<string, int>();
+
+    void Awake()
+    {
+        ApplyD3PotionEconomyFromBalance();
+    }
+
+    void ApplyD3PotionEconomyFromBalance()
+    {
+        D3GrowthBalanceData d = D3GrowthBalance.Load();
+        hpPotionHealAmount = d.hpPotionHealAmount;
+        mpPotionRestoreAmount = d.mpPotionRestoreAmount;
+        buyPotionGoldCost = d.buyPotionGoldCost;
+        buyManaGoldCost = d.buyManaGoldCost;
+        buyPotionCount = Mathf.Max(1, d.buyPotionCount);
+        buyPotionWeight = d.potionUnitWeight;
+        sellPotionGold = d.sellPotionGold;
+        sellManaGold = d.sellManaGold;
+        _shardUnitWeight = d.shardUnitWeight;
+    }
 
     public float CurrentWeight => currentWeight;
     public int StackCount => stackCount;
@@ -99,6 +122,12 @@ public class PlayerInventorySimple : MonoBehaviour
         return true;
     }
 
+    /// <summary>D3：README §9 负重上限；若当前已超过新上限则保持超重状态直至丢弃（拾取仍会失败）。</summary>
+    public void ApplyMaxCarryWeightFromDerived(float newMax)
+    {
+        maxCarryWeight = Mathf.Max(1f, newMax);
+    }
+
     public bool TryUseHpPotion()
     {
         int count = HpPotionCount;
@@ -128,7 +157,7 @@ public class PlayerInventorySimple : MonoBehaviour
 
         itemCounts[hpPotionId] = count - 1;
         stackCount = Mathf.Max(0, stackCount - 1);
-        currentWeight = Mathf.Max(0f, currentWeight - 1f);
+        currentWeight = Mathf.Max(0f, currentWeight - PotionUnitWeight);
         ServerAuditLogSimple.Push("inv_use_hp", $"count=1,remain={itemCounts[hpPotionId]}");
         return true;
     }
@@ -162,7 +191,7 @@ public class PlayerInventorySimple : MonoBehaviour
 
         itemCounts[mpPotionId] = count - 1;
         stackCount = Mathf.Max(0, stackCount - 1);
-        currentWeight = Mathf.Max(0f, currentWeight - 1f);
+        currentWeight = Mathf.Max(0f, currentWeight - PotionUnitWeight);
         ServerAuditLogSimple.Push("inv_use_mp", $"count=1,remain={itemCounts[mpPotionId]}");
         return true;
     }
@@ -187,7 +216,8 @@ public class PlayerInventorySimple : MonoBehaviour
             return false;
 
         int count = Mathf.Max(1, buyPotionCount);
-        float totalWeight = Mathf.Max(0.1f, buyPotionWeight) * count;
+        float unit = PotionUnitWeight;
+        float totalWeight = unit * count;
         int cost = Mathf.Max(1, buyPotionGoldCost) * count;
 
         if (currentWeight + totalWeight > maxCarryWeight + 0.0001f)
@@ -205,7 +235,7 @@ public class PlayerInventorySimple : MonoBehaviour
             return false;
         }
 
-        return TryAddPickup(Mathf.Max(0.1f, buyPotionWeight), hpPotionId, count);
+        return TryAddPickup(unit, hpPotionId, count);
     }
 
     public bool TryBuyMpPotion()
@@ -215,7 +245,8 @@ public class PlayerInventorySimple : MonoBehaviour
             return false;
 
         int count = Mathf.Max(1, buyPotionCount);
-        float totalWeight = Mathf.Max(0.1f, buyPotionWeight) * count;
+        float unit = PotionUnitWeight;
+        float totalWeight = unit * count;
         int cost = Mathf.Max(1, buyManaGoldCost) * count;
 
         if (currentWeight + totalWeight > maxCarryWeight + 0.0001f)
@@ -233,7 +264,7 @@ public class PlayerInventorySimple : MonoBehaviour
             return false;
         }
 
-        return TryAddPickup(Mathf.Max(0.1f, buyPotionWeight), mpPotionId, count);
+        return TryAddPickup(unit, mpPotionId, count);
     }
 
     public bool TrySellOnePotion()
@@ -251,7 +282,7 @@ public class PlayerInventorySimple : MonoBehaviour
         {
             itemCounts[hpPotionId] = HpPotionCount - 1;
             stackCount = Mathf.Max(0, stackCount - 1);
-            currentWeight = Mathf.Max(0f, currentWeight - 1f);
+            currentWeight = Mathf.Max(0f, currentWeight - PotionUnitWeight);
             wallet.AddGold(Mathf.Max(1, sellPotionGold));
             ServerAuditLogSimple.Push("inv_sell_hp", "count=1");
             return true;
@@ -261,7 +292,7 @@ public class PlayerInventorySimple : MonoBehaviour
         {
             itemCounts[mpPotionId] = MpPotionCount - 1;
             stackCount = Mathf.Max(0, stackCount - 1);
-            currentWeight = Mathf.Max(0f, currentWeight - 1f);
+            currentWeight = Mathf.Max(0f, currentWeight - PotionUnitWeight);
             wallet.AddGold(Mathf.Max(1, sellManaGold));
             ServerAuditLogSimple.Push("inv_sell_mp", "count=1");
             return true;
@@ -275,9 +306,9 @@ public class PlayerInventorySimple : MonoBehaviour
 
     public bool TryDiscardOneJunk()
     {
-        if (TryDiscardById(GameItemIdsSimple.Shard, 1f))
+        if (TryDiscardById(GameItemIdsSimple.Shard, ShardUnitWeight))
             return true;
-        if (TryDiscardById(mpPotionId, 1f))
+        if (TryDiscardById(mpPotionId, PotionUnitWeight))
             return true;
         ServerAuditLogSimple.Push(
             ServerAuditLogSimple.CategorySrvValTradeReject,
